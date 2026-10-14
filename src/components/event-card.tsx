@@ -64,7 +64,7 @@ export function EventCard({ event, onClick, onStatusChange, onCalendarToggle }: 
             
             {/* Title & Time - More Compact */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-foreground text-base leading-tight mb-1 line-clamp-2 text-compact group-hover:text-primary transition-colors">
+              <h3 className="event-title font-semibold text-foreground text-base leading-tight mb-1 line-clamp-2 text-compact group-hover:text-primary transition-colors">
                 {event.title}
               </h3>
               <div className="flex items-center text-xs text-muted-foreground space-x-2">
@@ -125,7 +125,7 @@ export function EventCard({ event, onClick, onStatusChange, onCalendarToggle }: 
         
         {/* Description - Only if space allows */}
         {event.description && (
-          <p className="text-xs text-muted-foreground line-clamp-2 text-compact leading-relaxed">
+          <p className="event-description text-xs text-muted-foreground line-clamp-2 text-compact leading-relaxed">
             {event.description}
           </p>
         )}

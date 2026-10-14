@@ -138,7 +138,7 @@ export function SourceEditDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+      <SheetContent className="drawer-content w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
           <SheetTitle>
             {isCreating ? "Neue Quelle hinzufügen" : "Quelle bearbeiten"}
