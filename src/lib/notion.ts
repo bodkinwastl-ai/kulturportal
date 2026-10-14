@@ -157,19 +157,31 @@ export async function updateEvent(eventId: string, updates: Partial<CultureEvent
       };
     }
     
-    // Vereinfachter Update über fetch
-    const response = await fetch(`https://api.notion.com/v1/pages/${eventId}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28',
-      },
-      body: JSON.stringify({
-        properties,
-      }),
-    });
-    
+    const patch = (props: Record<string, unknown>) =>
+      fetch(`https://api.notion.com/v1/pages/${eventId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Notion-Version': '2022-06-28',
+        },
+        body: JSON.stringify({ properties: props }),
+      });
+
+    let response = await patch(properties);
+
+    // LastReviewedAt is optional bookkeeping: if the database has no such
+    // column, retry without it instead of failing the whole update.
+    if (!response.ok && 'LastReviewedAt' in properties) {
+      const body = await response.clone().json().catch(() => ({}));
+      if (String(body?.message).includes('LastReviewedAt')) {
+        const { LastReviewedAt: _omit, ...rest } = properties;
+        void _omit;
+        response = Object.keys(rest).length ? await patch(rest) : response;
+        if (!Object.keys(rest).length) return true;
+      }
+    }
+
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
       const message = body?.message || `Notion antwortete mit ${response.status}`;
