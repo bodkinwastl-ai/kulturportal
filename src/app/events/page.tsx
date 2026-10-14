@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CultureEvent, CultureEventStatus } from "@/lib/types";
+import { useState } from "react";
+import { CultureEventStatus } from "@/lib/types";
+import { useEvents } from "@/lib/use-events";
+import { isUpcoming } from "@/lib/utils";
 import { AppShell } from "@/components/app-shell";
-import { EventCard } from "@/components/event-card";
+import { EventGroups } from "@/components/event-groups";
+import { ToastNotice } from "@/components/toast-notice";
 import { EventDetailDrawer } from "@/components/event-detail-drawer";
 import { EventFilters } from "@/components/event-filters";
 import { Button } from "@/components/ui/button";
@@ -12,105 +15,26 @@ import { Calendar, Grid, List } from "lucide-react";
 type SortOption = "date" | "status" | "rating";
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<CultureEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [notionConnected, setNotionConnected] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<CultureEvent | null>(null);
+  const {
+    events, loading, notionConnected, notice, dismissNotice,
+    handleStatusChange, handleCalendarToggle, handleInviteesChange,
+    handleRatingChange, handlePersonalNoteChange,
+  } = useEvents();
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<CultureEventStatus[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("date");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  
-  const fetchEvents = async () => {
-    try {
-      const response = await fetch("/api/events");
-      const data = await response.json();
-      setEvents(data.events || []);
-      setNotionConnected(data.notionConnected || false);
-    } catch (error) {
-      console.error("Error loading events:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchEvents();
-  }, []);
-  
-  const updateEventStatus = async (eventId: string, updates: Partial<CultureEvent>) => {
-    try {
-      const response = await fetch(`/api/events/${eventId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updates),
-      });
-      
-      if (response.ok) {
-        // Optimistic update
-        setEvents(prev => 
-          prev.map(event => 
-            event.id === eventId 
-              ? { ...event, ...updates }
-              : event
-          )
-        );
-        
-        // Update selected event if it's open
-        if (selectedEvent?.id === eventId) {
-          setSelectedEvent(prev => prev ? { ...prev, ...updates } : null);
-        }
-      }
-    } catch (error) {
-      console.error("Error updating event:", error);
-    }
-  };
-  
-  const handleStatusChange = (eventId: string, status: CultureEventStatus) => {
-    const updates: Partial<CultureEvent> = { status };
-    
-    // Auto-set calendar wanted for certain statuses
-    if (status === "Kalender" || status === "Einladen") {
-      updates.calendarWanted = true;
-    }
-    
-    updateEventStatus(eventId, updates);
-  };
-  
-  const handleCalendarToggle = (eventId: string) => {
-    const event = events.find(e => e.id === eventId);
-    if (event) {
-      updateEventStatus(eventId, { 
-        calendarWanted: !event.calendarWanted,
-        status: !event.calendarWanted && event.status === "Neu" ? "Interessant" : event.status
-      });
-    }
-  };
-  
-  const handleInviteesChange = (eventId: string, invitees: string) => {
-    updateEventStatus(eventId, { 
-      invitees,
-      status: invitees && !["Einladen", "Gebucht"].includes(events.find(e => e.id === eventId)?.status || "") 
-        ? "Einladen" 
-        : events.find(e => e.id === eventId)?.status || "Neu"
-    });
-  };
-  
-  const handleRatingChange = (eventId: string, rating: number) => {
-    updateEventStatus(eventId, { rating });
-  };
-  
-  const handlePersonalNoteChange = (eventId: string, personalNote: string) => {
-    updateEventStatus(eventId, { personalNote });
-  };
-  
+  const [showPast, setShowPast] = useState(false);
+
+  const selectedEvent = events.find((e) => e.id === selectedEventId) ?? null;
+  const pastCount = events.filter((e) => !isUpcoming(e.date)).length;
+
   // Filter events
   const filteredEvents = events.filter(event => {
+    if (!showPast && !isUpcoming(event.date)) return false;
     if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
         !event.description?.toLowerCase().includes(searchTerm.toLowerCase()) &&
         !event.venue?.toLowerCase().includes(searchTerm.toLowerCase())) {
@@ -195,6 +119,18 @@ export default function EventsPage() {
               </select>
             </div>
             
+            {pastCount > 0 && (
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={showPast}
+                  onChange={(e) => setShowPast(e.target.checked)}
+                  className="h-4 w-4 accent-[var(--accent)]"
+                />
+                Vergangene ({pastCount})
+              </label>
+            )}
+
             {/* View Mode Toggle */}
             <div className="flex border border-slate-200 rounded-md">
               <Button
@@ -234,21 +170,14 @@ export default function EventsPage() {
         
         {/* Events Display */}
         {sortedEvents.length > 0 ? (
-          <div className={
-            viewMode === "grid" 
-              ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3" 
-              : "space-y-4"
-          }>
-            {sortedEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                onClick={() => setSelectedEvent(event)}
-                onStatusChange={(status) => handleStatusChange(event.id, status)}
-                onCalendarToggle={() => handleCalendarToggle(event.id)}
-              />
-            ))}
-          </div>
+          <EventGroups
+            events={sortedEvents}
+            grouped={sortBy === "date"}
+            layout={viewMode}
+            onOpen={(event) => setSelectedEventId(event.id)}
+            onStatusChange={handleStatusChange}
+            onCalendarToggle={handleCalendarToggle}
+          />
         ) : (
           <div className="text-center py-12">
             <Calendar className="w-12 h-12 text-slate-400 mx-auto mb-4" />
@@ -272,7 +201,7 @@ export default function EventsPage() {
         <EventDetailDrawer
           event={selectedEvent}
           open={!!selectedEvent}
-          onOpenChange={(open) => !open && setSelectedEvent(null)}
+          onOpenChange={(open) => !open && setSelectedEventId(null)}
           onStatusChange={(status) => selectedEvent && handleStatusChange(selectedEvent.id, status)}
           onCalendarToggle={() => selectedEvent && handleCalendarToggle(selectedEvent.id)}
           onInviteesChange={(invitees) => selectedEvent && handleInviteesChange(selectedEvent.id, invitees)}
@@ -280,6 +209,7 @@ export default function EventsPage() {
           onPersonalNoteChange={(note) => selectedEvent && handlePersonalNoteChange(selectedEvent.id, note)}
         />
       </div>
+      <ToastNotice notice={notice} onDismiss={dismissNotice} />
     </AppShell>
   );
 }

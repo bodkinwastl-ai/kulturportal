@@ -5,6 +5,7 @@ import { StatusPill } from "./status-pill";
 import { Button } from "./ui/button";
 import { Calendar, CalendarCheck, Check, Users, Star, ExternalLink, Clock, MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { categoryColor } from "@/lib/category-colors";
 
 interface EventCardProps {
   event: CultureEvent;
@@ -44,13 +45,19 @@ export function EventCard({ event, onClick, onStatusChange, onCalendarToggle }: 
   return (
     <article
       className={cn(
-        "enterprise-card group flex h-full cursor-pointer flex-col p-4 sm:p-5",
-        event.status === "Neu" && "border-l-[3px] border-l-accent",
+        "enterprise-card group relative flex h-full cursor-pointer flex-col overflow-hidden p-4 pl-5 sm:p-5 sm:pl-6",
         isToday && "ring-2 ring-accent/40",
         isPast && "opacity-70"
       )}
       onClick={onClick}
     >
+      {/* Category colour stripe (first category) */}
+      {event.categories[0] && (
+        <span
+          className={cn("absolute inset-y-0 left-0 w-1.5", categoryColor(event.categories[0]).bar)}
+          aria-hidden="true"
+        />
+      )}
       <div className="flex gap-4">
         {/* Date tile */}
         <div className="flex w-12 shrink-0 flex-col items-center pt-0.5 text-center" aria-hidden="true">
@@ -97,7 +104,7 @@ export function EventCard({ event, onClick, onStatusChange, onCalendarToggle }: 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <ul className="flex flex-wrap gap-1.5" aria-label="Kategorien">
           {visibleCategories.map((category) => (
-            <li key={category} className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+            <li key={category} className={cn("rounded-md px-2 py-0.5 text-xs font-medium", categoryColor(category).chip)}>
               {category}
             </li>
           ))}

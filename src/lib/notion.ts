@@ -170,10 +170,16 @@ export async function updateEvent(eventId: string, updates: Partial<CultureEvent
       }),
     });
     
-    return response.ok;
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      const message = body?.message || `Notion antwortete mit ${response.status}`;
+      console.error("Notion-Update fehlgeschlagen:", response.status, message);
+      throw new Error(message);
+    }
+    return true;
   } catch (error) {
     console.error("Fehler beim Aktualisieren des Events:", error);
-    return false;
+    throw error;
   }
 }
 

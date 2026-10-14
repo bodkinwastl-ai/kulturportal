@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { CultureEvent, CultureEventStatus } from "@/lib/types";
+import { useState } from "react";
+import { CultureEventStatus } from "@/lib/types";
+import { useEvents } from "@/lib/use-events";
+import { isUpcoming } from "@/lib/utils";
 import { AppShell } from "@/components/app-shell";
-import { EventCard } from "@/components/event-card";
+import { EventGroups } from "@/components/event-groups";
+import { ToastNotice } from "@/components/toast-notice";
 import { EventDetailDrawer } from "@/components/event-detail-drawer";
 import { EventFilters } from "@/components/event-filters";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Star, TrendingUp, Clock, Filter } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Calendar, Filter } from "lucide-react";
 
 interface DashboardStats {
   neu: number;
@@ -21,101 +23,22 @@ interface DashboardStats {
 }
 
 export default function Dashboard() {
-  const [events, setEvents] = useState<CultureEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [notionConnected, setNotionConnected] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<CultureEvent | null>(null);
+  const {
+    events: allEvents, loading, notionConnected, notice, dismissNotice,
+    handleStatusChange, handleCalendarToggle, handleInviteesChange,
+    handleRatingChange, handlePersonalNoteChange,
+  } = useEvents();
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<CultureEventStatus[]>(["Neu", "Interessant"]);
   const [showFilters, setShowFilters] = useState(false);
-  
-  const fetchEvents = async () => {
-    try {
-      const response = await fetch("/api/events");
-      const data = await response.json();
-      setEvents(data.events || []);
-      setNotionConnected(data.notionConnected || false);
-    } catch (error) {
-      console.error("Error loading events:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-  
-  const updateEventStatus = async (eventId: string, updates: Partial<CultureEvent>) => {
-    try {
-      const response = await fetch(`/api/events/${eventId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updates),
-      });
-      
-      if (response.ok) {
-        // Optimistic update
-        setEvents(prev => 
-          prev.map(event => 
-            event.id === eventId 
-              ? { ...event, ...updates }
-              : event
-          )
-        );
-        
-        // Update selected event if it's open
-        if (selectedEvent?.id === eventId) {
-          setSelectedEvent(prev => prev ? { ...prev, ...updates } : null);
-        }
-      }
-    } catch (error) {
-      console.error("Error updating event:", error);
-    }
-  };
-  
-  const handleStatusChange = (eventId: string, status: CultureEventStatus) => {
-    const updates: Partial<CultureEvent> = { status };
-    
-    // Auto-set calendar wanted for certain statuses
-    if (status === "Kalender" || status === "Einladen") {
-      updates.calendarWanted = true;
-    }
-    
-    updateEventStatus(eventId, updates);
-  };
-  
-  const handleCalendarToggle = (eventId: string) => {
-    const event = events.find(e => e.id === eventId);
-    if (event) {
-      updateEventStatus(eventId, { 
-        calendarWanted: !event.calendarWanted,
-        status: !event.calendarWanted && event.status === "Neu" ? "Interessant" : event.status
-      });
-    }
-  };
-  
-  const handleInviteesChange = (eventId: string, invitees: string) => {
-    updateEventStatus(eventId, { 
-      invitees,
-      status: invitees && !["Einladen", "Gebucht"].includes(events.find(e => e.id === eventId)?.status || "") 
-        ? "Einladen" 
-        : events.find(e => e.id === eventId)?.status || "Neu"
-    });
-  };
-  
-  const handleRatingChange = (eventId: string, rating: number) => {
-    updateEventStatus(eventId, { rating });
-  };
-  
-  const handlePersonalNoteChange = (eventId: string, personalNote: string) => {
-    updateEventStatus(eventId, { personalNote });
-  };
-  
+
+  // Past events are not shown anywhere on the dashboard
+  const events = allEvents.filter((e) => isUpcoming(e.date));
+  const selectedEvent = allEvents.find((e) => e.id === selectedEventId) ?? null;
+
   // Filter events
   const filteredEvents = events.filter(event => {
     if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -123,42 +46,17 @@ export default function Dashboard() {
         !event.venue?.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
-    
-    if (selectedRegions.length > 0 && event.region && !selectedRegions.includes(event.region)) {
-      return false;
-    }
-    
-    if (selectedCategories.length > 0 && !event.categories.some(cat => selectedCategories.includes(cat))) {
-      return false;
-    }
-    
-    if (selectedStatuses.length > 0 && !selectedStatuses.includes(event.status)) {
-      return false;
-    }
-    
+    if (selectedRegions.length > 0 && event.region && !selectedRegions.includes(event.region)) return false;
+    if (selectedCategories.length > 0 && !event.categories.some(cat => selectedCategories.includes(cat))) return false;
+    if (selectedStatuses.length > 0 && !selectedStatuses.includes(event.status)) return false;
     return true;
   });
-  
-  // Sort events: Neu first, then by date
-  const sortedEvents = [...filteredEvents].sort((a, b) => {
-    // Priority order: Neu > Interessant > Kalender > Einladen > Rest
-    const statusPriority = {
-      "Neu": 1,
-      "Interessant": 2, 
-      "Kalender": 3,
-      "Einladen": 4
-    };
-    
-    const aPriority = statusPriority[a.status as keyof typeof statusPriority] || 5;
-    const bPriority = statusPriority[b.status as keyof typeof statusPriority] || 5;
-    
-    if (aPriority !== bPriority) {
-      return aPriority - bPriority;
-    }
-    
-    return new Date(a.date).getTime() - new Date(b.date).getTime();
-  });
-  
+
+  // Chronological, grouped by day in the render below
+  const sortedEvents = [...filteredEvents].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
   // Calculate stats
   const stats: DashboardStats = events.reduce((acc, event) => {
     acc.total++;
@@ -277,19 +175,15 @@ export default function Dashboard() {
           </Card>
         )}
         
-        {/* Events Grid - Dichter */}
+        {/* Events, grouped by day */}
         {sortedEvents.length > 0 ? (
-          <div className="dense-grid sm:grid-cols-2 xl:grid-cols-3">
-            {sortedEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                onClick={() => setSelectedEvent(event)}
-                onStatusChange={(status) => handleStatusChange(event.id, status)}
-                onCalendarToggle={() => handleCalendarToggle(event.id)}
-              />
-            ))}
-          </div>
+          <EventGroups
+            events={sortedEvents}
+            grouped
+            onOpen={(event) => setSelectedEventId(event.id)}
+            onStatusChange={handleStatusChange}
+            onCalendarToggle={handleCalendarToggle}
+          />
         ) : (
           <Card className="enterprise-card">
             <CardContent className="text-center py-12">
@@ -308,7 +202,7 @@ export default function Dashboard() {
         <EventDetailDrawer
           event={selectedEvent}
           open={!!selectedEvent}
-          onOpenChange={(open) => !open && setSelectedEvent(null)}
+          onOpenChange={(open) => !open && setSelectedEventId(null)}
           onStatusChange={(status) => selectedEvent && handleStatusChange(selectedEvent.id, status)}
           onCalendarToggle={() => selectedEvent && handleCalendarToggle(selectedEvent.id)}
           onInviteesChange={(invitees) => selectedEvent && handleInviteesChange(selectedEvent.id, invitees)}
@@ -316,6 +210,7 @@ export default function Dashboard() {
           onPersonalNoteChange={(note) => selectedEvent && handlePersonalNoteChange(selectedEvent.id, note)}
         />
       </div>
+      <ToastNotice notice={notice} onDismiss={dismissNotice} />
     </AppShell>
   );
 }

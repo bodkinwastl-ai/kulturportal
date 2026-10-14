@@ -1,10 +1,19 @@
 import { CultureEvent, CultureSource } from "./types";
 
+// Demo data stays upcoming: dates are relative to today.
+function daysFromNow(days: number, hour: number, minute: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  d.setHours(hour, minute, 0, 0);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+}
+
 export const mockEvents: CultureEvent[] = [
   {
     id: "1",
     title: "Wiener Philharmoniker - Neujahrskonzert Probe",
-    date: "2024-12-30T19:30:00",
+    date: daysFromNow(0, 19, 30),
     venue: "Musikverein Wien",
     city: "Wien",
     region: "Wien",
@@ -22,7 +31,7 @@ export const mockEvents: CultureEvent[] = [
   {
     id: "2", 
     title: "Digital Art Exhibition - Future Visions",
-    date: "2024-11-15T18:00:00",
+    date: daysFromNow(1, 18, 0),
     venue: "MAK Wien",
     city: "Wien", 
     region: "Wien",
@@ -39,7 +48,7 @@ export const mockEvents: CultureEvent[] = [
   {
     id: "3",
     title: "Jazz im Keller - Marcus Miller Quartet", 
-    date: "2024-11-08T21:00:00",
+    date: daysFromNow(1, 21, 0),
     venue: "Porgy & Bess",
     city: "Wien",
     region: "Wien", 
@@ -57,7 +66,7 @@ export const mockEvents: CultureEvent[] = [
   {
     id: "4",
     title: "Lange Nacht der Museen",
-    date: "2024-10-26T18:00:00", 
+    date: daysFromNow(5, 18, 0), 
     venue: "Diverse Museen",
     city: "Wien",
     region: "Wien",
@@ -75,7 +84,7 @@ export const mockEvents: CultureEvent[] = [
   {
     id: "5",
     title: "Stand-up Comedy - Michael Niavarani",
-    date: "2024-11-12T20:00:00",
+    date: daysFromNow(9, 20, 0),
     venue: "Stadtsaal",
     city: "Wien",
     region: "Wien", 
@@ -87,12 +96,12 @@ export const mockEvents: CultureEvent[] = [
     status: "Ignorieren",
     calendarWanted: false,
     calendarCreated: false,
-    lastReviewedAt: "2024-10-10T10:00:00"
+    lastReviewedAt: daysFromNow(-4, 10, 0)
   },
   {
     id: "6",
     title: "Opernball 2025 - Vorbereitungswalzer",
-    date: "2025-01-15T19:00:00",
+    date: daysFromNow(21, 19, 0),
     venue: "Wiener Staatsoper", 
     city: "Wien",
     region: "Wien",
