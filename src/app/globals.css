@@ -162,142 +162,25 @@
   @apply bg-slate-500;
 }
 
-/* P0 Critical Fixes: Mobile Responsiveness & Accessibility */
-
-/* Force mobile layout - Critical Override */
-@media (max-width: 768px) {
-  html, body {
-    overflow-x: hidden !important;
-    max-width: 100vw !important;
-  }
-  
-  * {
-    max-width: 100vw !important;
-    box-sizing: border-box !important;
-  }
-}
-
-/* Global focus indicators for accessibility - WCAG 2.1 AA compliance */
-*:focus {
-  outline: 2px solid #0066cc !important;
-  outline-offset: 2px !important;
-}
-
-/* Enhanced focus for interactive elements on dark backgrounds */
-button:focus,
-a:focus,
-[role="button"]:focus {
-  outline-color: #ffffff !important;
-  outline-width: 3px !important;
-  outline-offset: 2px !important;
-}
-
-/* Touch target minimum size compliance - WCAG 2.5.5 */
-button,
-[role="button"],
-a,
-input[type="submit"],
-input[type="button"] {
-  min-width: 44px;
-  min-height: 44px;
-}
-
-/* Ensure interactive elements have adequate padding */
-button:not(.icon-only),
-[role="button"]:not(.icon-only) {
-  padding: 0.5rem 1rem;
-}
-
-/* Text overflow protection for cards */
-.card-title,
-.event-title,
-.source-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-}
-
-/* Multi-line text overflow for descriptions */
-.card-content p,
-.card-description,
-.event-description {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-height: 1.4;
-  max-height: 2.8em; /* 2 lines * 1.4 line-height */
-}
-
-/* Mobile responsive fixes - Critical P0 */
-@media (max-width: 768px) {
-  /* Sources grid mobile optimization */
-  .sources-grid {
-    grid-template-columns: 1fr !important;
-    gap: 0.75rem;
-    padding: 0.5rem;
-  }
-  
-  /* Event cards mobile optimization */
-  .events-grid {
-    grid-template-columns: 1fr !important;
-    gap: 0.75rem;
-  }
-  
-  /* Form drawer mobile fixes */
-  .drawer-content,
-  .modal-content {
-    width: 100vw;
-    max-width: 100vw;
-    margin: 0;
-    padding: 1rem;
-  }
-  
-  /* Form grid mobile layout */
-  .form-grid {
-    grid-template-columns: 1fr !important;
-    gap: 0.75rem;
-  }
-  
-  /* Multi-select and dropdown mobile fixes */
-  .multi-select-container,
-  .select-container {
-    max-width: calc(100vw - 2rem);
-    overflow: hidden;
-  }
-  
-  /* Touch-friendly buttons on mobile */
-  button {
-    min-height: 48px;
-    min-width: 48px;
-    padding: 0.75rem 1rem;
-  }
-  
-  /* Icon buttons minimum size */
-  button.icon-only {
-    min-width: 48px;
-    min-height: 48px;
-    padding: 0.5rem;
-  }
-  
-  /* Prevent horizontal scroll on mobile */
+/* Mobile & accessibility. Kept in @layer base so Tailwind utilities can still override. */
+@layer base {
+  /* clip (not hidden) so body does not become a scroll container */
   body {
-    overflow-x: hidden;
+    overflow-x: clip;
   }
-  
-  /* Ensure all cards fit viewport */
-  .enterprise-card {
-    max-width: 100%;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-  }
-}
 
-/* Tablet responsive adjustments */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .sources-grid,
-  .events-grid {
-    grid-template-columns: repeat(2, 1fr);
+  /* Keyboard focus only, themed via --ring */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  /* Touch targets (WCAG 2.5.5) on touch devices only */
+  @media (pointer: coarse) {
+    button,
+    [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
   }
 }

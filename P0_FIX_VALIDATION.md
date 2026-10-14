@@ -46,7 +46,7 @@ npm run build
 npm run lint
 
 # Type check
-npm run type-check
+npx tsc --noEmit
 ```
 
 ## Browser Test URLs
