@@ -171,10 +171,10 @@ export default function EventsPage() {
     <AppShell notionConnected={notionConnected}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Alle Events</h1>
-            <p className="text-slate-600 mt-1">
+            <h1 className="text-3xl font-semibold text-foreground sm:text-4xl">Alle Events</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Vollständige Liste aller gefundenen Kulturveranstaltungen
             </p>
           </div>
@@ -182,11 +182,12 @@ export default function EventsPage() {
           <div className="flex items-center space-x-4">
             {/* Sort Options */}
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-slate-600">Sortierung:</span>
+              <label htmlFor="sort" className="text-sm text-muted-foreground">Sortierung</label>
               <select
+                id="sort"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="text-sm border border-slate-200 rounded-md px-2 py-1 bg-white"
+                className="h-10 rounded-md border border-input bg-card px-2 text-sm"
               >
                 <option value="date">Datum</option>
                 <option value="status">Status</option>
@@ -235,7 +236,7 @@ export default function EventsPage() {
         {sortedEvents.length > 0 ? (
           <div className={
             viewMode === "grid" 
-              ? "events-grid grid gap-4 md:grid-cols-2 lg:grid-cols-3" 
+              ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3" 
               : "space-y-4"
           }>
             {sortedEvents.map((event) => (

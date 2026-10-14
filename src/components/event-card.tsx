@@ -3,8 +3,7 @@
 import { CultureEvent, CultureEventStatus } from "@/lib/types";
 import { StatusPill } from "./status-pill";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import { Calendar, Users, Star, ExternalLink, Clock, MapPin } from "lucide-react";
+import { Calendar, CalendarCheck, Check, Users, Star, ExternalLink, Clock, MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EventCardProps {
@@ -16,188 +15,152 @@ interface EventCardProps {
 
 export function EventCard({ event, onClick, onStatusChange, onCalendarToggle }: EventCardProps) {
   const eventDate = new Date(event.date);
-  const isToday = eventDate.toDateString() === new Date().toDateString();
-  const isUpcoming = eventDate > new Date();
-  const isPast = eventDate < new Date() && !isToday;
-  
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return {
-      day: date.getDate(),
-      month: date.toLocaleString("de-DE", { month: "short" }),
-      time: date.toLocaleString("de-DE", { 
-        hour: "2-digit", 
-        minute: "2-digit" 
-      }),
-      weekday: date.toLocaleString("de-DE", { weekday: "short" })
-    };
+  const now = new Date();
+  const isToday = eventDate.toDateString() === now.toDateString();
+  const isPast = eventDate < now && !isToday;
+
+  const day = eventDate.getDate();
+  const month = eventDate.toLocaleString("de-DE", { month: "short" }).replace(".", "");
+  const weekday = eventDate.toLocaleString("de-DE", { weekday: "short" }).replace(".", "");
+  const time = eventDate.toLocaleString("de-DE", { hour: "2-digit", minute: "2-digit" });
+
+  const place = [
+    event.venue,
+    event.city && event.city !== event.venue ? event.city : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const stop = (fn: () => void) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fn();
   };
-  
-  const dateInfo = formatDate(event.date);
-  
+
+  const showTriage = event.status === "Neu";
+  const showCalendar = event.status === "Neu" || event.status === "Interessant";
+  const visibleCategories = event.categories.slice(0, 2);
+  const extraCategories = event.categories.length - visibleCategories.length;
+
   return (
-    <div 
+    <article
       className={cn(
-        "enterprise-card hover-lift cursor-pointer group",
-        isToday && "ring-2 ring-accent/60 border-accent/30",
-        isPast && "opacity-75",
-        event.status === "Neu" && "border-l-4 border-l-blue-500"
+        "enterprise-card group flex h-full cursor-pointer flex-col p-4 sm:p-5",
+        event.status === "Neu" && "border-l-[3px] border-l-accent",
+        isToday && "ring-2 ring-accent/40",
+        isPast && "opacity-70"
       )}
       onClick={onClick}
     >
-      <div className="p-4 space-y-3">
-        {/* Compact Header */}
-        <div className="flex items-start justify-between">
-          {/* Date Block - Smaller */}
-          <div className="flex items-center space-x-3">
-            <div className="text-center min-w-[48px] flex-shrink-0">
-              <div className={cn(
-                "text-lg font-bold transition-colors",
-                isToday ? "text-accent" : "text-foreground"
-              )}>
-                {dateInfo.day}
-              </div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                {dateInfo.month}
-              </div>
-            </div>
-            
-            {/* Title & Time - More Compact */}
-            <div className="flex-1 min-w-0">
-              <h3 className="event-title font-semibold text-foreground text-base leading-tight mb-1 line-clamp-2 text-compact group-hover:text-primary transition-colors">
-                {event.title}
-              </h3>
-              <div className="flex items-center text-xs text-muted-foreground space-x-2">
-                <Clock className="w-3 h-3" />
-                <span>{dateInfo.time}</span>
-                <span>•</span>
-                <span className="capitalize">{dateInfo.weekday}</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Status Badge */}
-          <StatusPill status={event.status} />
-        </div>
-        
-        {/* Location - More Compact */}
-        <div className="flex items-center text-xs text-muted-foreground space-x-1">
-          <MapPin className="w-3 h-3" />
-          <span className="line-clamp-1">
-            {event.venue && <span className="font-medium">{event.venue}</span>}
-            {event.venue && (event.city || event.region) && <span> • </span>}
-            {event.city}{event.region && event.region !== event.city ? `, ${event.region}` : ""}
+      <div className="flex gap-4">
+        {/* Date tile */}
+        <div className="flex w-12 shrink-0 flex-col items-center pt-0.5 text-center" aria-hidden="true">
+          <span className={cn("font-display text-3xl font-semibold leading-none", isToday ? "text-accent" : "text-foreground")}>
+            {day}
           </span>
+          <span className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">{month}</span>
         </div>
-        
-        {/* Categories & Price - Inline and Compact */}
-        <div className="flex items-center justify-between">
-          <div className="flex flex-wrap gap-1">
-            {event.categories.slice(0, 2).map((category, index) => (
-              <Badge 
-                key={index}
-                variant="secondary"
-                className="text-xs px-2 py-0.5 font-normal"
-              >
-                {category}
-              </Badge>
-            ))}
-            {event.categories.length > 2 && (
-              <Badge variant="outline" className="text-xs px-2 py-0.5">
-                +{event.categories.length - 2}
-              </Badge>
-            )}
+
+        <div className="min-w-0 flex-1">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <StatusPill status={event.status} size="sm" />
+            {isToday && <span className="text-xs font-semibold text-accent">Heute</span>}
           </div>
-          
-          {/* Price & Rating */}
-          <div className="flex items-center space-x-3 text-xs">
-            {event.price && (
-              <span className="font-semibold text-foreground">{event.price}</span>
-            )}
-            {event.rating && (
-              <div className="flex items-center">
-                <Star className="w-3 h-3 text-yellow-500 mr-1" />
-                <span className="font-medium">{event.rating}/5</span>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Description - Only if space allows */}
-        {event.description && (
-          <p className="event-description text-xs text-muted-foreground line-clamp-2 text-compact leading-relaxed">
-            {event.description}
+
+          <h3 className="font-display text-lg font-semibold leading-snug text-foreground">
+            <button
+              type="button"
+              onClick={stop(onClick)}
+              className="line-clamp-2 text-left transition-colors group-hover:text-accent"
+            >
+              {event.title}
+            </button>
+          </h3>
+
+          <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span><span className="capitalize">{weekday}</span>, {time} Uhr</span>
           </p>
-        )}
-        
-        {/* Action Bar - More Compact */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-          <div className="flex items-center space-x-2">
-            {/* Status Actions */}
-            {event.status === "Neu" && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStatusChange("Interessant");
-                  }}
-                  className="h-7 px-2 text-xs text-green-700 border-green-200 hover:bg-green-50"
-                >
-                  ✓ Interessant
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStatusChange("Ignorieren");
-                  }}
-                  className="h-7 px-2 text-xs text-muted-foreground border-muted hover:bg-muted/50"
-                >
-                  ✕ Ignore
-                </Button>
-              </>
-            )}
-            
-            {/* Calendar Toggle */}
-            {(event.status === "Interessant" || event.status === "Neu") && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCalendarToggle();
-                }}
-                className={cn(
-                  "h-7 px-2 text-xs border-purple-200 hover:bg-purple-50",
-                  event.calendarWanted ? "text-purple-700 bg-purple-50" : "text-purple-600"
-                )}
-              >
-                <Calendar className="w-3 h-3 mr-1" />
-                Kalender
-              </Button>
-            )}
-          </div>
-          
-          {/* Source & Indicators */}
-          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-            {event.calendarWanted && (
-              <Calendar className="w-3 h-3 text-purple-500" />
-            )}
-            {event.invitees && (
-              <Users className="w-3 h-3 text-orange-500" />
-            )}
-            {event.url && (
-              <ExternalLink className="w-3 h-3" />
-            )}
-            <span className="font-medium text-xs">
-              {event.sourceName}
-            </span>
-          </div>
+          {place && (
+            <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span className="truncate">{place}</span>
+            </p>
+          )}
         </div>
       </div>
-    </div>
+
+      {event.description && (
+        <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{event.description}</p>
+      )}
+
+      {/* Facts: categories left, price + rating right; wraps on narrow cards */}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <ul className="flex flex-wrap gap-1.5" aria-label="Kategorien">
+          {visibleCategories.map((category) => (
+            <li key={category} className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+              {category}
+            </li>
+          ))}
+          {extraCategories > 0 && (
+            <li className="rounded-md px-1 py-0.5 text-xs text-muted-foreground">+{extraCategories}</li>
+          )}
+        </ul>
+        <div className="flex items-center gap-3 text-sm">
+          {event.price && <span className="font-semibold text-foreground">{event.price}</span>}
+          {event.rating ? (
+            <span className="flex items-center gap-1 text-foreground">
+              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" aria-hidden="true" />
+              <span className="sr-only">Bewertung</span>
+              {event.rating}/5
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Actions: stable structure, wraps instead of overlapping */}
+      <div className="mt-auto pt-4">
+        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+          {showTriage && (
+            <>
+              <Button size="sm" onClick={stop(() => onStatusChange("Interessant"))} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Check className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                Interessant
+              </Button>
+              <Button size="sm" variant="ghost" onClick={stop(() => onStatusChange("Ignorieren"))} className="text-muted-foreground">
+                <X className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                Ignorieren
+              </Button>
+            </>
+          )}
+          {showCalendar && (
+            <Button
+              size="sm"
+              variant="outline"
+              aria-pressed={!!event.calendarWanted}
+              onClick={stop(onCalendarToggle)}
+              className={cn(event.calendarWanted && "border-teal-300 bg-teal-50 text-teal-800 hover:bg-teal-100")}
+            >
+              {event.calendarWanted ? (
+                <CalendarCheck className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Calendar className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              )}
+              Kalender
+            </Button>
+          )}
+        </div>
+
+        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+          <span className="flex min-w-0 items-center gap-1.5">
+            {event.url ? <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : null}
+            <span className="truncate">{event.sourceName}</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-2">
+            {event.calendarWanted && <CalendarCheck className="h-3.5 w-3.5 text-teal-700" aria-label="Für Kalender markiert" />}
+            {event.invitees && <Users className="h-3.5 w-3.5 text-violet-700" aria-label="Einladungen" />}
+          </span>
+        </div>
+      </div>
+    </article>
   );
 }

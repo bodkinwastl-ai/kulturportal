@@ -1,11 +1,10 @@
 "use client";
 
-import { Calendar, List, AlertCircle, BarChart3 } from "lucide-react";
+import { Calendar, List, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
-import { Badge } from "./ui/badge";
 
 interface AppShellProps {
   children: ReactNode;
@@ -13,163 +12,98 @@ interface AppShellProps {
 }
 
 const navigation = [
-  {
-    name: "Dashboard",
-    href: "/",
-    icon: BarChart3,
-    description: "Überblick & Statistiken"
-  },
-  {
-    name: "Events",
-    href: "/events", 
-    icon: Calendar,
-    description: "Alle Veranstaltungen"
-  },
-  {
-    name: "Quellen",
-    href: "/sources",
-    icon: List,
-    description: "Datenquellen verwalten"
-  },
+  { name: "Übersicht", href: "/", icon: LayoutDashboard },
+  { name: "Events", href: "/events", icon: Calendar },
+  { name: "Quellen", href: "/sources", icon: List },
 ];
 
 export function AppShell({ children, notionConnected = false }: AppShellProps) {
   const pathname = usePathname();
-  
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Professional Header */}
-      <header className="enterprise-header border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-8">
-              {/* Logo/Title */}
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-semibold text-white">
-                    Kultur Portal
-                  </h1>
-                  <p className="text-xs text-blue-200 leading-none">
-                    Enterprise Dashboard
-                  </p>
-                </div>
-              </div>
-              
-              {/* Navigation */}
-              <nav className="hidden md:flex space-x-1">
-                {navigation.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = pathname === item.href;
-                  
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={cn(
-                        "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 relative group",
-                        isActive
-                          ? "bg-white/10 text-white shadow-sm"
-                          : "text-blue-100 hover:text-white hover:bg-white/5"
-                      )}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span>{item.name}</span>
-                      
-                      {/* Tooltip */}
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                        {item.description}
-                      </div>
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-            
-            {/* Status & Info */}
-            <div className="flex items-center space-x-4">
-              {/* Notion Connection Status */}
-              <Badge 
-                variant={notionConnected ? "default" : "secondary"}
-                className={cn(
-                  "text-xs font-medium",
-                  notionConnected 
-                    ? "bg-green-600 hover:bg-green-700 text-white border-0" 
-                    : "bg-amber-600 hover:bg-amber-700 text-white border-0"
-                )}
-              >
-                <div className={cn(
-                  "w-2 h-2 rounded-full mr-2",
-                  notionConnected ? "bg-green-200" : "bg-amber-200"
-                )} />
-                {notionConnected ? "Notion Live" : "Mock Daten"}
-              </Badge>
-              
-              {/* Build Info */}
-              <div className="text-xs text-blue-200 font-medium">
-                v0.1.0
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Mobile Navigation */}
-        <nav className="md:hidden border-t border-blue-800/30">
-          <div className="px-4 py-3">
-            <div className="flex space-x-2 overflow-x-auto">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-8">
+            <Link href="/" className="font-display text-xl font-semibold tracking-tight text-foreground">
+              Kulturportal
+            </Link>
+
+            <nav aria-label="Hauptnavigation" className="hidden md:flex md:gap-1">
               {navigation.map((item) => {
-                const Icon = item.icon;
                 const isActive = pathname === item.href;
-                
                 return (
                   <Link
-                    key={item.name}
+                    key={item.href}
                     href={item.href}
+                    aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap",
+                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-white/10 text-white"
-                        : "text-blue-100 hover:text-white hover:bg-white/5"
+                        ? "bg-secondary text-foreground"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                     )}
                   >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.name}</span>
+                    <item.icon className="h-4 w-4" aria-hidden="true" />
+                    {item.name}
                   </Link>
                 );
               })}
-            </div>
+            </nav>
           </div>
-        </nav>
+
+          <span
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset whitespace-nowrap",
+              notionConnected
+                ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+                : "bg-amber-50 text-amber-900 ring-amber-200"
+            )}
+          >
+            <span
+              className={cn("h-1.5 w-1.5 rounded-full", notionConnected ? "bg-emerald-600" : "bg-amber-600")}
+              aria-hidden="true"
+            />
+            {notionConnected ? "Notion live" : "Demo-Daten"}
+          </span>
+        </div>
       </header>
-      
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {children}
-      </main>
-      
-      {/* Professional Footer */}
-      <footer className="border-t border-slate-200 bg-slate-50 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center space-x-4">
-              <span>Kulturportal v0.1.0</span>
-              <span>•</span>
-              <span>Build {new Date().toLocaleDateString('de-DE')}</span>
-              <span>•</span>
-              <span>Austria Culture Radar</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              {notionConnected ? (
-                <span className="text-green-600 font-medium">Notion Connected ✓</span>
-              ) : (
-                <span className="text-amber-600 font-medium">Fallback Mode</span>
-              )}
-            </div>
-          </div>
+
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">{children}</main>
+
+      <footer className="mt-12 hidden border-t border-border md:block">
+        <div className="mx-auto max-w-7xl px-4 py-4 text-xs text-muted-foreground sm:px-6 lg:px-8">
+          Kulturportal · Austria Culture Radar
+          {!notionConnected && " · Notion nicht verbunden, es werden Demo-Daten gezeigt"}
         </div>
       </footer>
+
+      {/* Mobile: bottom navigation (3 items, thumb reach) */}
+      <nav
+        aria-label="Hauptnavigation"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
+      >
+        <ul className="grid grid-cols-3">
+          {navigation.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "flex min-h-14 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors",
+                    isActive ? "text-accent" : "text-muted-foreground"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" aria-hidden="true" />
+                  {item.name}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </div>
   );
 }

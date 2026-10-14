@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CultureEvent, CultureEventStatus } from "@/lib/types";
 import { AppShell } from "@/components/app-shell";
@@ -209,105 +210,52 @@ export default function Dashboard() {
   return (
     <AppShell notionConnected={notionConnected}>
       <div className="space-y-6">
-        {/* Dashboard Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Überblick über {stats.total} Kulturveranstaltungen
+        {/* Header */}
+        <div className="flex items-end justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-3xl font-semibold text-foreground sm:text-4xl">Übersicht</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {sortedEvents.length} von {stats.total} Events
+              {activeFiltersCount === 0 ? " · Neu und Interessant" : ` · ${activeFiltersCount} Filter aktiv`}
+              {" · "}
+              <Link href="/events" className="font-medium text-foreground underline underline-offset-4 hover:text-accent">
+                Alle Events
+              </Link>
             </p>
           </div>
-          
-          {/* Filter Toggle */}
-          <div className="flex items-center space-x-2">
-            <Badge variant={activeFiltersCount > 0 ? "default" : "outline"} className="text-xs">
-              {activeFiltersCount > 0 ? `${activeFiltersCount} Filter aktiv` : "Keine Filter"}
-            </Badge>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="p-2 rounded-md hover:bg-muted transition-colors"
-              title="Filter ein-/ausblenden"
-            >
-              <Filter className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowFilters(!showFilters)}
+            aria-expanded={showFilters}
+            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md border border-input bg-card px-3 text-sm font-medium transition-colors hover:bg-secondary"
+          >
+            <Filter className="h-4 w-4" aria-hidden="true" />
+            Filter
+            {activeFiltersCount > 0 && (
+              <span className="rounded-full bg-accent px-1.5 text-xs text-accent-foreground">{activeFiltersCount}</span>
+            )}
+          </button>
         </div>
-        
-        {/* Stats Cards - Kompakter */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-          <Card className="enterprise-card">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Neu</p>
-                  <p className="text-xl font-bold text-foreground">{stats.neu}</p>
-                </div>
-                <TrendingUp className="w-4 h-4 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="enterprise-card">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Interessant</p>
-                  <p className="text-xl font-bold text-foreground">{stats.interessant}</p>
-                </div>
-                <Star className="w-4 h-4 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="enterprise-card">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Kalender</p>
-                  <p className="text-xl font-bold text-foreground">{stats.kalender}</p>
-                </div>
-                <Calendar className="w-4 h-4 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="enterprise-card">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Einladen</p>
-                  <p className="text-xl font-bold text-foreground">{stats.einladen}</p>
-                </div>
-                <Users className="w-4 h-4 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="enterprise-card">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Diese Woche</p>
-                  <p className="text-xl font-bold text-foreground">{stats.thisWeek}</p>
-                </div>
-                <Clock className="w-4 h-4 text-accent" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="enterprise-card">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Gesamt</p>
-                  <p className="text-xl font-bold text-foreground">{stats.total}</p>
-                </div>
-                <TrendingUp className="w-4 h-4 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
+
+        {/* Triage strip: "Neu" is the task, everything else is context */}
+        <dl className="grid grid-cols-3 divide-x divide-y divide-border overflow-hidden rounded-xl border border-border bg-card md:grid-cols-6 md:divide-y-0">
+          {[
+            { label: "Neu", value: stats.neu, strong: true },
+            { label: "Interessant", value: stats.interessant },
+            { label: "Kalender", value: stats.kalender },
+            { label: "Einladen", value: stats.einladen },
+            { label: "Diese Woche", value: stats.thisWeek },
+            { label: "Gesamt", value: stats.total },
+          ].map((item) => (
+            <div key={item.label} className="px-4 py-3">
+              <dt className="text-xs font-medium text-muted-foreground">{item.label}</dt>
+              <dd className={`font-display text-2xl font-semibold ${item.strong && item.value > 0 ? "text-accent" : "text-foreground"}`}>
+                {item.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
         {/* Filters - Collapsible */}
         {showFilters && (
           <Card className="enterprise-card">
@@ -331,7 +279,7 @@ export default function Dashboard() {
         
         {/* Events Grid - Dichter */}
         {sortedEvents.length > 0 ? (
-          <div className="events-grid dense-grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="dense-grid sm:grid-cols-2 xl:grid-cols-3">
             {sortedEvents.map((event) => (
               <EventCard
                 key={event.id}

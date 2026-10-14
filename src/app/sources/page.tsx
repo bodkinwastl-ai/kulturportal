@@ -390,13 +390,13 @@ export default function SourcesPage() {
             </Card>
           ) : (
             // Grid View
-            <div className="sources-grid dense-grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="dense-grid sm:grid-cols-2 xl:grid-cols-3">
               {filteredSources.map((source) => (
                 <Card key={source.id} className="enterprise-card hover-lift">
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <h3 className="source-title font-semibold text-sm text-foreground truncate">
+                        <h3 className="font-semibold text-sm text-foreground truncate">
                           {source.name}
                         </h3>
                         <a 

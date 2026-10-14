@@ -1,8 +1,17 @@
 "use client";
 
 import { CultureEventStatus } from "@/lib/types";
-import { Badge } from "./ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  Sparkles,
+  Star,
+  CalendarCheck,
+  Users,
+  CircleCheck,
+  CircleHelp,
+  EyeOff,
+  type LucideIcon,
+} from "lucide-react";
 
 interface StatusPillProps {
   status: CultureEventStatus;
@@ -10,76 +19,38 @@ interface StatusPillProps {
   className?: string;
 }
 
-export function StatusPill({ status, size = "default", className }: StatusPillProps) {
-  const getStatusConfig = (status: CultureEventStatus) => {
-    switch (status) {
-      case "Neu":
-        return {
-          className: "status-neu",
-          label: "Neu",
-          icon: "✨"
-        };
-      case "Interessant":
-        return {
-          className: "status-interessant",
-          label: "Interessant", 
-          icon: "⭐"
-        };
-      case "Kalender":
-        return {
-          className: "status-kalender",
-          label: "Kalender",
-          icon: "📅"
-        };
-      case "Einladen":
-        return {
-          className: "status-einladen",
-          label: "Einladen",
-          icon: "👥"
-        };
-      case "Ignorieren":
-        return {
-          className: "status-ignorieren",
-          label: "Ignoriert",
-          icon: "⭕"
-        };
-      case "Gebucht":
-        return {
-          className: "bg-emerald-100 text-emerald-800 border-emerald-300",
-          label: "Gebucht",
-          icon: "✅"
-        };
-      case "Vielleicht":
-        return {
-          className: "bg-yellow-100 text-yellow-800 border-yellow-300",
-          label: "Vielleicht",
-          icon: "🤔"
-        };
-      default:
-        return {
-          className: "bg-gray-100 text-gray-700 border-gray-200",
-          label: status,
-          icon: "❓"
-        };
-    }
-  };
+// One tonal pair per status. All text/background pairs are >= 4.5:1.
+const STATUS: Record<string, { label: string; icon: LucideIcon; tone: string }> = {
+  Neu: { label: "Neu", icon: Sparkles, tone: "bg-orange-50 text-orange-800 ring-orange-200" },
+  Interessant: { label: "Interessant", icon: Star, tone: "bg-amber-50 text-amber-900 ring-amber-200" },
+  Kalender: { label: "Kalender", icon: CalendarCheck, tone: "bg-teal-50 text-teal-800 ring-teal-200" },
+  Einladen: { label: "Einladen", icon: Users, tone: "bg-violet-50 text-violet-800 ring-violet-200" },
+  Gebucht: { label: "Gebucht", icon: CircleCheck, tone: "bg-emerald-50 text-emerald-800 ring-emerald-200" },
+  Vielleicht: { label: "Vielleicht", icon: CircleHelp, tone: "bg-stone-100 text-stone-700 ring-stone-200" },
+  Ignorieren: { label: "Ignoriert", icon: EyeOff, tone: "bg-stone-100 text-stone-600 ring-stone-200" },
+};
 
-  const config = getStatusConfig(status);
-  
+export function StatusPill({ status, size = "default", className }: StatusPillProps) {
+  const config = STATUS[status] ?? {
+    label: status,
+    icon: CircleHelp,
+    tone: "bg-stone-100 text-stone-700 ring-stone-200",
+  };
+  const Icon = config.icon;
+
   return (
-    <Badge
-      variant="outline"
+    <span
       className={cn(
-        config.className,
-        "font-medium border transition-colors",
-        size === "sm" && "text-xs px-2 py-0.5",
-        size === "default" && "text-xs px-2 py-1", 
-        size === "lg" && "text-sm px-3 py-1.5",
+        "inline-flex shrink-0 items-center gap-1 rounded-full font-medium ring-1 ring-inset whitespace-nowrap",
+        config.tone,
+        size === "sm" && "px-2 py-0.5 text-xs",
+        size === "default" && "px-2.5 py-1 text-xs",
+        size === "lg" && "px-3 py-1.5 text-sm",
         className
       )}
     >
-      <span className="mr-1">{config.icon}</span>
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
       {config.label}
-    </Badge>
+    </span>
   );
 }
