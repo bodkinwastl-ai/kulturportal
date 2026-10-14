@@ -235,7 +235,7 @@ export default function EventsPage() {
         {sortedEvents.length > 0 ? (
           <div className={
             viewMode === "grid" 
-              ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" 
+              ? "events-grid grid gap-4 md:grid-cols-2 lg:grid-cols-3" 
               : "space-y-4"
           }>
             {sortedEvents.map((event) => (

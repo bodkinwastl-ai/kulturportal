@@ -331,7 +331,7 @@ export default function Dashboard() {
         
         {/* Events Grid - Dichter */}
         {sortedEvents.length > 0 ? (
-          <div className="dense-grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="events-grid dense-grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {sortedEvents.map((event) => (
               <EventCard
                 key={event.id}
