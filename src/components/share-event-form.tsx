@@ -21,13 +21,14 @@ interface ShareEventFormProps {
   event: CultureEvent;
   /** Called after a successful send so the recipient can be tracked as invited. */
   onInvited: (invitees: string) => void;
-  onClose: () => void;
 }
 
-export function ShareEventForm({ event, onInvited, onClose }: ShareEventFormProps) {
-  const listId = useId();
+/** Compact: one row (address + send) is always visible; message is optional. */
+export function ShareEventForm({ event, onInvited }: ShareEventFormProps) {
+  const id = useId();
   const [to, setTo] = useState("");
   const [message, setMessage] = useState("");
+  const [showMessage, setShowMessage] = useState(false);
   const [addInvitee, setAddInvitee] = useState(true);
   const [state, setState] = useState<{ kind: "idle" | "sending" | "ok" | "error"; text?: string }>({ kind: "idle" });
   const [recent, setRecent] = useState<string[]>(() => (typeof window === "undefined" ? [] : loadRecent()));
@@ -58,62 +59,35 @@ export function ShareEventForm({ event, onInvited, onClose }: ShareEventFormProp
       setState({ kind: "ok", text: `Mail an ${address} gesendet` });
       setTo("");
       setMessage("");
+      setShowMessage(false);
     } catch (error) {
       setState({ kind: "error", text: error instanceof Error ? error.message : "Senden fehlgeschlagen" });
     }
   };
 
   return (
-    <form onSubmit={send} className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-      <div className="text-sm font-medium text-slate-700">Per Mail auf dieses Event hinweisen</div>
-
-      <div className="space-y-1">
-        <label htmlFor={`${listId}-to`} className="text-sm text-slate-600">Empfänger</label>
+    <form onSubmit={send} className="space-y-2">
+      <label htmlFor={`${id}-to`} className="text-sm font-medium text-foreground">
+        Per Mail weiterleiten
+      </label>
+      <div className="flex gap-2">
         <Input
-          id={`${listId}-to`}
+          id={`${id}-to`}
           type="email"
           required
           autoComplete="email"
-          list={listId}
+          list={id}
           value={to}
           onChange={(e) => setTo(e.target.value)}
           placeholder="name@beispiel.at"
+          className="min-w-0 flex-1"
         />
-        <datalist id={listId}>
+        <datalist id={id}>
           {recent.map((r) => (
             <option key={r} value={r} />
           ))}
         </datalist>
-      </div>
-
-      <div className="space-y-1">
-        <label htmlFor={`${listId}-msg`} className="text-sm text-slate-600">Persönliche Nachricht (optional)</label>
-        <Textarea
-          id={`${listId}-msg`}
-          value={message}
-          maxLength={1000}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder={`z. B. „Hast du Lust, mitzukommen?“`}
-          rows={3}
-        />
-      </div>
-
-      <p className="text-xs text-slate-500">
-        Die Mail enthält Titel, Datum, Ort, Preis, Kurzbeschreibung und den Link zum Event.
-      </p>
-
-      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
-        <input
-          type="checkbox"
-          checked={addInvitee}
-          onChange={(e) => setAddInvitee(e.target.checked)}
-          className="h-4 w-4"
-        />
-        Zu Einladungen hinzufügen
-      </label>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="submit" size="sm" disabled={state.kind === "sending"}>
+        <Button type="submit" disabled={state.kind === "sending"} className="shrink-0">
           {state.kind === "sending" ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
           ) : (
@@ -121,10 +95,31 @@ export function ShareEventForm({ event, onInvited, onClose }: ShareEventFormProp
           )}
           Senden
         </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={onClose}>
-          Schließen
-        </Button>
       </div>
+
+      {showMessage ? (
+        <Textarea
+          aria-label="Persönliche Nachricht"
+          value={message}
+          maxLength={1000}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Persönliche Nachricht (optional)"
+          rows={2}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowMessage(true)}
+          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+        >
+          Nachricht hinzufügen
+        </button>
+      )}
+
+      <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+        <input type="checkbox" checked={addInvitee} onChange={(e) => setAddInvitee(e.target.checked)} className="h-4 w-4" />
+        Zu Einladungen hinzufügen
+      </label>
 
       <div aria-live="polite">
         {state.kind === "ok" && (

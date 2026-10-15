@@ -1,26 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { CultureEvent, CultureEventStatus } from "@/lib/types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { StatusPill } from "./status-pill";
 import { ShareEventForm } from "./share-event-form";
-import { 
-  Calendar, 
-  Users, 
-  Star, 
-  ExternalLink, 
-  MapPin, 
-  Clock,
-  Tag,
-  Edit3,
-  Check,
-  Mail,
-  X
-} from "lucide-react";
-import { useState } from "react";
+import { categoryColor } from "@/lib/category-colors";
 import { cn } from "@/lib/utils";
+import { Calendar, CalendarCheck, Check, Clock, Edit3, ExternalLink, MapPin, Star, Users, X } from "lucide-react";
 
 interface EventDetailDrawerProps {
   event: CultureEvent | null;
@@ -33,6 +22,79 @@ interface EventDetailDrawerProps {
   onPersonalNoteChange: (note: string) => void;
 }
 
+const STATUS_CHOICES: { status: CultureEventStatus; label: string }[] = [
+  { status: "Interessant", label: "Interessant" },
+  { status: "Kalender", label: "Kalender" },
+  { status: "Einladen", label: "Einladen" },
+  { status: "Gebucht", label: "Gebucht" },
+  { status: "Ignorieren", label: "Ignorieren" },
+];
+
+/** Click-to-edit single-line field used for note and invitees. */
+function InlineField({
+  label,
+  icon,
+  value,
+  empty,
+  placeholder,
+  onSave,
+}: {
+  label: string;
+  icon?: React.ReactNode;
+  value?: string;
+  empty: string;
+  placeholder: string;
+  onSave: (value: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+          {icon}
+          {label}
+        </span>
+        {!editing && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2"
+            aria-label={`${label} bearbeiten`}
+            onClick={() => {
+              setDraft(value || "");
+              setEditing(true);
+            }}
+          >
+            <Edit3 className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        )}
+      </div>
+      {editing ? (
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSave(draft);
+            setEditing(false);
+          }}
+        >
+          <Input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={placeholder} className="min-w-0 flex-1" />
+          <Button type="submit" size="icon" aria-label="Speichern">
+            <Check className="h-4 w-4" aria-hidden="true" />
+          </Button>
+          <Button type="button" size="icon" variant="outline" aria-label="Abbrechen" onClick={() => setEditing(false)}>
+            <X className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </form>
+      ) : (
+        <p className={cn("text-sm", value ? "text-foreground" : "text-muted-foreground")}>{value || empty}</p>
+      )}
+    </div>
+  );
+}
+
 export function EventDetailDrawer({
   event,
   open,
@@ -41,363 +103,160 @@ export function EventDetailDrawer({
   onCalendarToggle,
   onInviteesChange,
   onRatingChange,
-  onPersonalNoteChange
+  onPersonalNoteChange,
 }: EventDetailDrawerProps) {
-  const [isEditingInvitees, setIsEditingInvitees] = useState(false);
-  const [isEditingNote, setIsEditingNote] = useState(false);
-  const [sharingEventId, setSharingEventId] = useState<string | null>(null);
-  const [tempInvitees, setTempInvitees] = useState("");
-  const [tempNote, setTempNote] = useState("");
-  const [recentInvitees, setRecentInvitees] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const saved = window.localStorage.getItem("kulturportal.recentInvitees");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-  
   if (!event) return null;
-  
-  const eventDate = new Date(event.date);
-  const isUpcoming = eventDate > new Date();
-  
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString("de-DE", {
-      weekday: "long",
-      year: "numeric",
-      month: "long", 
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  };
-  
-  const statusActions = [
-    { status: "Interessant" as CultureEventStatus, label: "Interessant", color: "text-green-700 border-green-200 hover:bg-green-50" },
-    { status: "Kalender" as CultureEventStatus, label: "In Kalender", color: "text-purple-700 border-purple-200 hover:bg-purple-50" },
-    { status: "Einladen" as CultureEventStatus, label: "Einladen", color: "text-orange-700 border-orange-200 hover:bg-orange-50" },
-    { status: "Gebucht" as CultureEventStatus, label: "Gebucht", color: "text-emerald-700 border-emerald-200 hover:bg-emerald-50" },
-    { status: "Ignorieren" as CultureEventStatus, label: "Ignorieren", color: "text-gray-600 border-gray-200 hover:bg-gray-50" },
-  ];
-  
-  const startEditingInvitees = () => {
-    setTempInvitees(event.invitees || "");
-    setIsEditingInvitees(true);
-  };
-  
-  const saveInvitees = () => {
-    const trimmedInvitees = tempInvitees.trim();
-    if (trimmedInvitees) {
-      const nextRecent = [
-        trimmedInvitees,
-        ...recentInvitees.filter((item) => item !== trimmedInvitees),
-      ].slice(0, 6);
-      setRecentInvitees(nextRecent);
-      window.localStorage.setItem("kulturportal.recentInvitees", JSON.stringify(nextRecent));
-    }
-    onInviteesChange(tempInvitees);
-    setIsEditingInvitees(false);
-  };
-  
-  const cancelEditingInvitees = () => {
-    setIsEditingInvitees(false);
-    setTempInvitees("");
-  };
-  
-  const startEditingNote = () => {
-    setTempNote(event.personalNote || "");
-    setIsEditingNote(true);
-  };
-  
-  const saveNote = () => {
-    onPersonalNoteChange(tempNote);
-    setIsEditingNote(false);
-  };
-  
-  const cancelEditingNote = () => {
-    setIsEditingNote(false);
-    setTempNote("");
-  };
-  
+
+  const date = new Date(event.date);
+  const isPast = date < new Date() && date.toDateString() !== new Date().toDateString();
+  const when = date.toLocaleString("de-DE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const place = [event.venue, event.city, event.region && event.region !== event.city ? event.region : null]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-4">
-          <div className="flex items-start justify-between">
-            <DialogTitle className="text-xl font-bold text-slate-900 pr-8">
-              {event.title}
-            </DialogTitle>
-            <StatusPill status={event.status} />
+      <DialogContent className="max-h-[92vh] max-w-3xl gap-0 overflow-y-auto rounded-xl border-border bg-background p-0">
+        {/* Header */}
+        <DialogHeader className="space-y-3 border-b border-border p-5 pr-12 sm:p-6 sm:pr-14">
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusPill status={event.status} size="sm" />
+            {isPast && <span className="text-xs font-medium text-amber-700">Vergangen</span>}
           </div>
-          
-          <div className="flex items-center text-slate-600 space-x-4">
-            <div className="flex items-center">
-              <Clock className="w-4 h-4 mr-2" />
-              <span>{formatDate(event.date)}</span>
+          <DialogTitle className="font-display text-2xl font-semibold leading-snug text-foreground sm:text-3xl">
+            {event.title}
+          </DialogTitle>
+          <DialogDescription asChild>
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <p className="flex items-center gap-2">
+                <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>{when} Uhr</span>
+              </p>
+              {place && (
+                <p className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {place}
+                </p>
+              )}
             </div>
-            {!isUpcoming && (
-              <span className="text-sm text-amber-600 font-medium">Vergangen</span>
-            )}
-          </div>
+          </DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-6">
-          {/* Venue und Location */}
-          {(event.venue || event.city) && (
-            <div className="flex items-start space-x-3">
-              <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
-              <div>
-                {event.venue && (
-                  <div className="font-medium text-slate-900">{event.venue}</div>
+
+        <div className="grid gap-6 p-5 sm:p-6 md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+          {/* Actions first on mobile (forwarding stays near the top), right column on desktop */}
+          <aside className="space-y-5 md:order-2">
+            <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+              <ShareEventForm event={event} onInvited={onInviteesChange} />
+            </div>
+
+            <div className="grid gap-2">
+              <Button
+                variant="outline"
+                aria-pressed={event.calendarWanted}
+                onClick={onCalendarToggle}
+                className={cn(event.calendarWanted && "border-teal-300 bg-teal-50 text-teal-800 hover:bg-teal-100")}
+              >
+                {event.calendarWanted ? (
+                  <CalendarCheck className="mr-2 h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Calendar className="mr-2 h-4 w-4" aria-hidden="true" />
                 )}
-                <div className="text-slate-600">
-                  {event.city}{event.region && event.region !== event.city ? `, ${event.region}` : ""}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Kategorien */}
-          {event.categories.length > 0 && (
-            <div className="flex items-start space-x-3">
-              <Tag className="w-5 h-5 text-slate-400 mt-0.5" />
-              <div className="flex flex-wrap gap-2">
-                {event.categories.map((category, index) => (
-                  <span 
-                    key={index}
-                    className="px-3 py-1 text-sm bg-slate-100 text-slate-700 rounded-md"
-                  >
-                    {category}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Beschreibung */}
-          {event.description && (
-            <div className="prose prose-sm max-w-none">
-              <p className="text-slate-700 leading-relaxed">{event.description}</p>
-            </div>
-          )}
-          
-          {/* Preis */}
-          {event.price && (
-            <div className="bg-slate-50 rounded-lg p-4">
-              <div className="font-semibold text-slate-900">Preis: {event.price}</div>
-            </div>
-          )}
-          
-          {/* Rating */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-slate-700">Bewertung</label>
-              <div className="flex space-x-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    onClick={() => onRatingChange(star)}
-                    className={cn(
-                      "w-6 h-6 transition-colors",
-                      star <= (event.rating || 0) 
-                        ? "text-yellow-500 hover:text-yellow-600" 
-                        : "text-slate-300 hover:text-yellow-400"
-                    )}
-                  >
-                    <Star className="w-6 h-6 fill-current" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          {/* Personal Note */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-slate-700">Persönliche Notiz</label>
-              {!isEditingNote && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={startEditingNote}
-                  className="h-8 px-2"
-                >
-                  <Edit3 className="w-4 h-4" />
+                {event.calendarCreated ? "Im Kalender erstellt" : event.calendarWanted ? "Für Kalender vorgemerkt" : "In Kalender übernehmen"}
+              </Button>
+              {event.url && (
+                <Button asChild variant="outline">
+                  <a href={event.url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" aria-hidden="true" />
+                    Original ansehen
+                  </a>
                 </Button>
               )}
             </div>
-            {isEditingNote ? (
-              <div className="space-y-2">
-                <Input
-                  value={tempNote}
-                  onChange={(e) => setTempNote(e.target.value)}
-                  placeholder="Notiz eingeben..."
-                  className="w-full"
-                />
-                <div className="flex space-x-2">
-                  <Button size="sm" onClick={saveNote}>
-                    <Check className="w-4 h-4" />
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={cancelEditingNote}>
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="min-h-[2.5rem] px-3 py-2 rounded-md border border-slate-200 bg-slate-50 text-sm text-slate-700">
-                {event.personalNote || "Keine Notiz"}
-              </div>
-            )}
-          </div>
-          
-          {/* Invitees */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-slate-700 flex items-center">
-                <Users className="w-4 h-4 mr-2" />
-                Einladungen
-              </label>
-              {!isEditingInvitees && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={startEditingInvitees}
-                  className="h-8 px-2"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-            {isEditingInvitees ? (
-              <div className="space-y-2">
-                <Input
-                  value={tempInvitees}
-                  onChange={(e) => setTempInvitees(e.target.value)}
-                  placeholder="E-Mail-Adressen oder Namen, durch Komma getrennt..."
-                  className="w-full"
-                />
-                {recentInvitees.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {recentInvitees.map((invitee) => (
-                      <button
-                        key={invitee}
-                        type="button"
-                        onClick={() => setTempInvitees(invitee)}
-                        className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600 transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700"
-                      >
-                        {invitee}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <div className="flex space-x-2">
-                  <Button size="sm" onClick={saveInvitees}>
-                    <Check className="w-4 h-4" />
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={cancelEditingInvitees}>
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="min-h-[2.5rem] px-3 py-2 rounded-md border border-slate-200 bg-slate-50 text-sm text-slate-700">
-                {event.invitees || "Keine Einladungen"}
-              </div>
-            )}
-          </div>
-          
-          {/* Calendar Status */}
-          {(event.calendarWanted || event.calendarCreated) && (
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <div className="flex items-center space-x-2 text-purple-700">
-                <Calendar className="w-5 h-5" />
-                <span className="font-medium">
-                  {event.calendarCreated ? "Im Kalender erstellt" : "Für Kalender vorgemerkt"}
-                </span>
-              </div>
-              {event.calendarEventId && (
-                <div className="text-xs text-purple-600 mt-1">
-                  Event ID: {event.calendarEventId}
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Actions */}
-          <div className="space-y-4 pt-4 border-t border-slate-200">
+          </aside>
+
+          <div className="min-w-0 space-y-5 md:order-1">
+            {/* Status */}
             <div>
-              <div className="text-sm font-medium text-slate-700 mb-3">Status ändern</div>
-              <div className="flex flex-wrap gap-2">
-                {statusActions.map(({ status, label, color }) => (
+              <div className="mb-2 text-sm font-medium text-foreground">Status</div>
+              <div role="group" aria-label="Status ändern" className="flex flex-wrap gap-2">
+                {STATUS_CHOICES.map(({ status, label }) => (
                   <Button
                     key={status}
-                    variant="outline"
                     size="sm"
+                    variant={event.status === status ? "default" : "outline"}
+                    aria-pressed={event.status === status}
                     onClick={() => onStatusChange(status)}
-                    className={cn(
-                      color,
-                      event.status === status && "ring-2 ring-current ring-opacity-20"
-                    )}
+                    className={cn(event.status === status && "bg-primary text-primary-foreground")}
                   >
                     {label}
                   </Button>
                 ))}
               </div>
             </div>
-            
-            {!event.calendarWanted && (
-              <Button
-                onClick={onCalendarToggle}
-                className="w-full"
-                variant="outline"
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                In Kalender übernehmen
-              </Button>
-            )}
-            
-            {/* Share by mail */}
-            {sharingEventId === event.id ? (
-              <ShareEventForm
-                event={event}
-                onInvited={onInviteesChange}
-                onClose={() => setSharingEventId(null)}
-              />
-            ) : (
-              <Button
-                onClick={() => setSharingEventId(event.id)}
-                className="w-full"
-                variant="outline"
-              >
-                <Mail className="w-4 h-4 mr-2" />
-                Per Mail empfehlen
-              </Button>
-            )}
 
-            {/* External Link */}
-            {event.url && (
-              <Button
-                asChild
-                variant="outline"
-                className="w-full"
-              >
-                <a href={event.url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Original ansehen
-                </a>
-              </Button>
-            )}
-          </div>
-          
-          {/* Quelle */}
-          {event.sourceName && (
-            <div className="text-xs text-slate-500 text-center pt-2 border-t border-slate-100">
-              Quelle: {event.sourceName}
+            {event.description && <p className="text-sm leading-relaxed text-foreground">{event.description}</p>}
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              {event.categories.length > 0 && (
+                <ul className="flex flex-wrap gap-1.5" aria-label="Kategorien">
+                  {event.categories.map((category) => (
+                    <li key={category} className={cn("rounded-md px-2 py-0.5 text-xs font-medium", categoryColor(category).chip)}>
+                      {category}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {event.price && <span className="text-sm font-semibold text-foreground">{event.price}</span>}
             </div>
-          )}
+
+            <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
+              <span className="text-sm font-medium text-foreground">Bewertung</span>
+              <div className="flex gap-0.5" role="group" aria-label="Bewertung">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => onRatingChange(star)}
+                    aria-label={`${star} von 5 Sternen`}
+                    aria-pressed={star <= (event.rating || 0)}
+                    className="rounded p-1"
+                  >
+                    <Star
+                      className={cn(
+                        "h-5 w-5 transition-colors",
+                        star <= (event.rating || 0) ? "fill-amber-400 text-amber-500" : "text-stone-300 hover:text-amber-400"
+                      )}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <InlineField
+              label="Notiz"
+              value={event.personalNote}
+              empty="Keine Notiz"
+              placeholder="Notiz eingeben…"
+              onSave={onPersonalNoteChange}
+            />
+            <InlineField
+              label="Einladungen"
+              icon={<Users className="h-4 w-4" aria-hidden="true" />}
+              value={event.invitees}
+              empty="Keine Einladungen"
+              placeholder="E-Mail-Adressen oder Namen, durch Komma getrennt…"
+              onSave={onInviteesChange}
+            />
+
+            {event.sourceName && <p className="text-xs text-muted-foreground">Quelle: {event.sourceName}</p>}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
