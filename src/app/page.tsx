@@ -156,9 +156,7 @@ export default function Dashboard() {
 
         {/* Filters - Collapsible */}
         {showFilters && (
-          <Card className="enterprise-card">
-            <CardContent className="p-4">
-              <EventFilters
+          <EventFilters
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
                 selectedRegions={selectedRegions}
@@ -170,9 +168,7 @@ export default function Dashboard() {
                 availableRegions={availableRegions}
                 availableCategories={availableCategories}
                 onClearFilters={clearFilters}
-              />
-            </CardContent>
-          </Card>
+          />
         )}
         
         {/* Events, grouped by day */}

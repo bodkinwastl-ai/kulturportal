@@ -3,7 +3,9 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CultureEventStatus } from "@/lib/types";
 import { useEvents } from "@/lib/use-events";
+import { EventFilters } from "@/components/event-filters";
 import { addDays, isUpcoming, parseDateParam, startOfWeek, toDateParam } from "@/lib/utils";
 import { AppShell } from "@/components/app-shell";
 import { WeekGrid } from "@/components/week-grid";
@@ -20,6 +22,10 @@ function WeekView() {
     handleRatingChange, handlePersonalNoteChange,
   } = useEvents();
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<CultureEventStatus[]>([]);
 
   const thisWeek = startOfWeek(new Date());
   const weekStart = startOfWeek(parseDateParam(params.get("week")) ?? thisWeek);
@@ -28,13 +34,35 @@ function WeekView() {
 
   const go = (start: Date) => router.replace(`/week?week=${toDateParam(start)}`);
 
-  const weekEvents = events
-    .filter((e) => isUpcoming(e.date) && e.status !== "Ignorieren")
-    .filter((e) => {
-      const d = new Date(e.date);
-      return d >= weekStart && d < weekEnd;
-    })
+  // Filter options come from all upcoming events so they stay stable across weeks
+  const upcoming = events.filter((e) => isUpcoming(e.date));
+  const availableRegions = Array.from(new Set(upcoming.map((e) => e.region).filter(Boolean))) as string[];
+  const availableCategories = Array.from(new Set(upcoming.flatMap((e) => e.categories)));
+
+  const matches = (e: (typeof events)[number]) => {
+    const q = searchTerm.trim().toLowerCase();
+    if (q && ![e.title, e.description, e.venue].some((v) => v?.toLowerCase().includes(q))) return false;
+    if (selectedRegions.length > 0 && e.region && !selectedRegions.includes(e.region)) return false;
+    if (selectedCategories.length > 0 && !e.categories.some((c) => selectedCategories.includes(c))) return false;
+    // Without a status filter, ignored events stay hidden
+    return selectedStatuses.length > 0 ? selectedStatuses.includes(e.status) : e.status !== "Ignorieren";
+  };
+
+  const inWeek = upcoming.filter((e) => {
+    const d = new Date(e.date);
+    return d >= weekStart && d < weekEnd;
+  });
+  const weekEvents = inWeek
+    .filter(matches)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const hasFilters = !!searchTerm || selectedRegions.length + selectedCategories.length + selectedStatuses.length > 0;
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedRegions([]);
+    setSelectedCategories([]);
+    setSelectedStatuses([]);
+  };
 
   const selectedEvent = events.find((e) => e.id === selectedEventId) ?? null;
   const rangeLabel = `${weekStart.toLocaleDateString("de-DE", { day: "numeric", month: "short" })} – ${addDays(weekStart, 6).toLocaleDateString("de-DE", { day: "numeric", month: "short", year: "numeric" })}`;
@@ -47,6 +75,7 @@ function WeekView() {
             <h1 className="text-3xl font-semibold text-foreground sm:text-4xl">Woche</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {rangeLabel} · {weekEvents.length} {weekEvents.length === 1 ? "Event" : "Events"}
+              {hasFilters && inWeek.length !== weekEvents.length && ` von ${inWeek.length}`}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -61,6 +90,29 @@ function WeekView() {
             </Button>
           </div>
         </div>
+
+        <EventFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          selectedRegions={selectedRegions}
+          onRegionsChange={setSelectedRegions}
+          selectedCategories={selectedCategories}
+          onCategoriesChange={setSelectedCategories}
+          selectedStatuses={selectedStatuses}
+          onStatusesChange={setSelectedStatuses}
+          availableRegions={availableRegions}
+          availableCategories={availableCategories}
+          onClearFilters={clearFilters}
+        />
+
+        {!loading && hasFilters && weekEvents.length === 0 && inWeek.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            Kein Event dieser Woche passt zu den Filtern ({inWeek.length} ausgeblendet).{" "}
+            <button type="button" onClick={clearFilters} className="font-medium text-foreground underline underline-offset-4">
+              Filter zurücksetzen
+            </button>
+          </p>
+        )}
 
         {loading ? (
           <div className="flex h-64 items-center justify-center" role="status" aria-label="Lädt">

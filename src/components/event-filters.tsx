@@ -6,6 +6,7 @@ import { Input } from "./ui/input";
 import { Search, Filter, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { categoryColor } from "@/lib/category-colors";
 
 interface EventFiltersProps {
   searchTerm: string;
@@ -76,127 +77,94 @@ export function EventFilters({
     }
   };
   
+  const activeCount = selectedRegions.length + selectedCategories.length + selectedStatuses.length + (searchTerm ? 1 : 0);
+
+  const chip = (active: boolean) =>
+    cn(
+      "rounded-full border px-3 py-1.5 text-sm transition-colors",
+      active
+        ? "border-primary bg-primary text-primary-foreground"
+        : "border-input bg-card text-foreground hover:bg-secondary"
+    );
+
   return (
-    <div className="bg-white border-b border-slate-200 sticky top-0 z-40">
-      <div className="px-6 py-4">
-        {/* Suchleiste und Filter Toggle */}
-        <div className="flex items-center space-x-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              placeholder="Events durchsuchen..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className={cn(
-              "relative",
-              hasActiveFilters && "border-blue-500 text-blue-700"
-            )}
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filter
-            {hasActiveFilters && (
-              <span className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center">
-                {selectedRegions.length + selectedCategories.length + selectedStatuses.length + (searchTerm ? 1 : 0)}
-              </span>
-            )}
-          </Button>
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClearFilters}
-              className="text-slate-500 hover:text-slate-700"
-            >
-              <X className="w-4 h-4 mr-1" />
-              Zurücksetzen
-            </Button>
-          )}
+    <div className="rounded-xl border border-border bg-card p-4">
+      {/* Search + toggle */}
+      <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+        <div className="relative min-w-0 flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Input
+            aria-label="Events durchsuchen"
+            placeholder="Events durchsuchen…"
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-10"
+          />
         </div>
-        
-        {/* Filter Optionen */}
-        {showFilters && (
-          <div className="mt-4 space-y-4 pt-4 border-t border-slate-200">
-            {/* Status Filter */}
-            <div>
-              <label className="text-sm font-medium text-slate-700 block mb-2">
-                Status
-              </label>
+        <Button
+          variant="outline"
+          aria-expanded={showFilters}
+          onClick={() => setShowFilters(!showFilters)}
+          className={cn(hasActiveFilters && "border-accent text-accent")}
+        >
+          <Filter className="mr-2 h-4 w-4" aria-hidden="true" />
+          Filter
+          {activeCount > 0 && (
+            <span className="ml-2 rounded-full bg-accent px-1.5 text-xs text-accent-foreground">{activeCount}</span>
+          )}
+        </Button>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={onClearFilters} className="text-muted-foreground">
+            <X className="mr-1 h-4 w-4" aria-hidden="true" />
+            Zurücksetzen
+          </Button>
+        )}
+      </div>
+
+      {showFilters && (
+        <div className="mt-4 space-y-4 border-t border-border pt-4">
+          <fieldset>
+            <legend className="mb-2 text-sm font-medium text-foreground">Status</legend>
+            <div className="flex flex-wrap gap-2">
+              {statusOptions.map(({ value, label }) => (
+                <button key={value} type="button" aria-pressed={selectedStatuses.includes(value)} onClick={() => toggleStatus(value)} className={chip(selectedStatuses.includes(value))}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          {availableRegions.length > 0 && (
+            <fieldset>
+              <legend className="mb-2 text-sm font-medium text-foreground">Regionen</legend>
               <div className="flex flex-wrap gap-2">
-                {statusOptions.map(({ value, label }) => (
-                  <button
-                    key={value}
-                    onClick={() => toggleStatus(value)}
-                    className={cn(
-                      "px-3 py-1 text-sm rounded-full border transition-colors",
-                      selectedStatuses.includes(value)
-                        ? "bg-blue-100 border-blue-300 text-blue-800"
-                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                    )}
-                  >
-                    {label}
+                {availableRegions.map((region) => (
+                  <button key={region} type="button" aria-pressed={selectedRegions.includes(region)} onClick={() => toggleRegion(region)} className={chip(selectedRegions.includes(region))}>
+                    {region}
                   </button>
                 ))}
               </div>
-            </div>
-            
-            {/* Regionen Filter */}
-            {availableRegions.length > 0 && (
-              <div>
-                <label className="text-sm font-medium text-slate-700 block mb-2">
-                  Regionen
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {availableRegions.map((region) => (
-                    <button
-                      key={region}
-                      onClick={() => toggleRegion(region)}
-                      className={cn(
-                        "px-3 py-1 text-sm rounded-full border transition-colors",
-                        selectedRegions.includes(region)
-                          ? "bg-green-100 border-green-300 text-green-800"
-                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                      )}
-                    >
-                      {region}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Kategorien Filter */}
-            {availableCategories.length > 0 && (
-              <div>
-                <label className="text-sm font-medium text-slate-700 block mb-2">
-                  Kategorien
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {availableCategories.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => toggleCategory(category)}
-                      className={cn(
-                        "px-3 py-1 text-sm rounded-full border transition-colors",
-                        selectedCategories.includes(category)
-                          ? "bg-purple-100 border-purple-300 text-purple-800"
-                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                      )}
-                    >
+            </fieldset>
+          )}
+
+          {availableCategories.length > 0 && (
+            <fieldset>
+              <legend className="mb-2 text-sm font-medium text-foreground">Kategorien</legend>
+              <div className="flex flex-wrap gap-2">
+                {availableCategories.map((category) => {
+                  const active = selectedCategories.includes(category);
+                  return (
+                    <button key={category} type="button" aria-pressed={active} onClick={() => toggleCategory(category)} className={cn(chip(active), "inline-flex items-center gap-2")}>
+                      <span className={cn("h-2 w-2 rounded-full", categoryColor(category).bar)} aria-hidden="true" />
                       {category}
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            )}
-          </div>
-        )}
-      </div>
+            </fieldset>
+          )}
+        </div>
+      )}
     </div>
   );
 }
