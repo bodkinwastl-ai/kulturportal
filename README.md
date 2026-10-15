@@ -46,16 +46,15 @@ BASIC_AUTH_USER=admin
 BASIC_AUTH_PASSWORD=your_password_here
 ```
 
-Optional für die Info-Mail ("Per Mail empfehlen" im Event-Detail):
+Optional für die Info-Mail ("Per Mail empfehlen" im Event-Detail), Versand über Gmail / Google Workspace:
 
 ```env
-# Resend (https://resend.com)
-RESEND_API_KEY=re_...
-# Absender; mit onboarding@resend.dev geht Mail nur an die eigene Resend-Adresse,
-# für beliebige Empfänger eine Domain bei Resend verifizieren
-MAIL_FROM="Kulturportal <tipps@deine-domain.at>"
-# Antworten landen hier (optional)
-MAIL_REPLY_TO=deine@adresse.at
+GMAIL_USER=du@deine-domain.at
+# Google-Konto -> Sicherheit -> App-Passwörter (Bestätigung in zwei Schritten nötig)
+GMAIL_APP_PASSWORD=abcd efgh ijkl mnop
+# Anzeigename des Absenders (optional) und Antwortadresse (optional, Standard: GMAIL_USER)
+MAIL_FROM_NAME="Peter Wastl"
+MAIL_REPLY_TO=du@deine-domain.at
 ```
 
 Der Mail-Endpunkt ist in Produktion nur mit gesetztem `BASIC_AUTH_USER`/`BASIC_AUTH_PASSWORD` nutzbar.

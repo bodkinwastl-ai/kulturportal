@@ -1,3 +1,4 @@
+import nodemailer from "nodemailer";
 import { CultureEvent } from "./types";
 
 const esc = (s: string) =>
@@ -64,26 +65,31 @@ ${url ? `<p style="margin:20px 0 0"><a href="${esc(url)}" style="display:inline-
 
 export class MailNotConfiguredError extends Error {}
 
+/** Sends through Gmail/Google Workspace SMTP with an app password. */
 export async function sendEventTip(to: string, event: CultureEvent, message?: string) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) throw new MailNotConfiguredError("Mail-Versand nicht konfiguriert (RESEND_API_KEY fehlt)");
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD?.replace(/\s+/g, "");
+  if (!user || !pass) {
+    throw new MailNotConfiguredError("Mail-Versand nicht konfiguriert (GMAIL_USER / GMAIL_APP_PASSWORD fehlen)");
+  }
 
   const { subject, text, html } = buildTip(event, message);
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: process.env.MAIL_FROM || "Kulturportal <onboarding@resend.dev>",
-      to: [to],
-      ...(process.env.MAIL_REPLY_TO ? { reply_to: process.env.MAIL_REPLY_TO } : {}),
-      subject,
-      text,
-      html,
-    }),
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: { user, pass },
+    connectionTimeout: 10_000,
+    socketTimeout: 15_000,
   });
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body?.message || `Resend antwortete mit ${response.status}`);
-  }
+  const name = process.env.MAIL_FROM_NAME;
+  await transporter.sendMail({
+    from: name ? { name, address: user } : user,
+    to,
+    replyTo: process.env.MAIL_REPLY_TO || user,
+    subject,
+    text,
+    html,
+  });
 }
