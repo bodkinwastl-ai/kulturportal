@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { StatusPill } from "./status-pill";
+import { ShareEventForm } from "./share-event-form";
 import { 
   Calendar, 
   Users, 
@@ -15,6 +16,7 @@ import {
   Tag,
   Edit3,
   Check,
+  Mail,
   X
 } from "lucide-react";
 import { useState } from "react";
@@ -43,6 +45,7 @@ export function EventDetailDrawer({
 }: EventDetailDrawerProps) {
   const [isEditingInvitees, setIsEditingInvitees] = useState(false);
   const [isEditingNote, setIsEditingNote] = useState(false);
+  const [sharingEventId, setSharingEventId] = useState<string | null>(null);
   const [tempInvitees, setTempInvitees] = useState("");
   const [tempNote, setTempNote] = useState("");
   const [recentInvitees, setRecentInvitees] = useState<string[]>(() => {
@@ -356,6 +359,24 @@ export function EventDetailDrawer({
               </Button>
             )}
             
+            {/* Share by mail */}
+            {sharingEventId === event.id ? (
+              <ShareEventForm
+                event={event}
+                onInvited={onInviteesChange}
+                onClose={() => setSharingEventId(null)}
+              />
+            ) : (
+              <Button
+                onClick={() => setSharingEventId(event.id)}
+                className="w-full"
+                variant="outline"
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Per Mail empfehlen
+              </Button>
+            )}
+
             {/* External Link */}
             {event.url && (
               <Button

@@ -111,6 +111,21 @@ export async function fetchEvents(): Promise<CultureEvent[]> {
   }
 }
 
+// Einzelnes Event laden (Mock-Fallback ohne Notion)
+export async function getEventById(eventId: string): Promise<CultureEvent | null> {
+  if (!notionClient) {
+    return mockEvents.find((e) => e.id === eventId) ?? null;
+  }
+  const response = await fetch(`https://api.notion.com/v1/pages/${encodeURIComponent(eventId)}`, {
+    headers: {
+      'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
+      'Notion-Version': '2022-06-28',
+    },
+  });
+  if (!response.ok) return null;
+  return mapNotionToCultureEvent(await response.json());
+}
+
 // Event in Notion aktualisieren
 export async function updateEvent(eventId: string, updates: Partial<CultureEvent>): Promise<boolean> {
   if (!notionClient) {

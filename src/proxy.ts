@@ -10,8 +10,12 @@ function unauthorized() {
 }
 
 export function proxy(request: NextRequest) {
-  // Skip auth for API routes
-  if (request.nextUrl.pathname.startsWith("/api/")) {
+  const path = request.nextUrl.pathname;
+  // The share route sends real email, so it must never be open to the public.
+  const isShare = /^\/api\/events\/[^/]+\/share$/.test(path);
+
+  // Skip auth for other API routes
+  if (path.startsWith("/api/") && !isShare) {
     return NextResponse.next();
   }
 
@@ -19,6 +23,12 @@ export function proxy(request: NextRequest) {
   const password = process.env.BASIC_AUTH_PASSWORD;
 
   if (!user || !password) {
+    if (isShare && process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "Mail-Versand benötigt BASIC_AUTH_USER und BASIC_AUTH_PASSWORD" },
+        { status: 503 }
+      );
+    }
     return NextResponse.next();
   }
 

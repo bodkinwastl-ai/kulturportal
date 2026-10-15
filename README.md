@@ -46,6 +46,20 @@ BASIC_AUTH_USER=admin
 BASIC_AUTH_PASSWORD=your_password_here
 ```
 
+Optional für die Info-Mail ("Per Mail empfehlen" im Event-Detail):
+
+```env
+# Resend (https://resend.com)
+RESEND_API_KEY=re_...
+# Absender; mit onboarding@resend.dev geht Mail nur an die eigene Resend-Adresse,
+# für beliebige Empfänger eine Domain bei Resend verifizieren
+MAIL_FROM="Kulturportal <tipps@deine-domain.at>"
+# Antworten landen hier (optional)
+MAIL_REPLY_TO=deine@adresse.at
+```
+
+Der Mail-Endpunkt ist in Produktion nur mit gesetztem `BASIC_AUTH_USER`/`BASIC_AUTH_PASSWORD` nutzbar.
+
 ### 3. Entwicklungsserver starten
 
 ```bash

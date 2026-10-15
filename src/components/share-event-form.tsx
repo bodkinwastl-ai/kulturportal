@@ -1,0 +1,140 @@
+"use client";
+
+import { useId, useState } from "react";
+import { CultureEvent } from "@/lib/types";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { Check, Loader2, Send } from "lucide-react";
+
+const RECENT_KEY = "kulturportal.recentRecipients";
+
+function loadRecent(): string[] {
+  try {
+    return JSON.parse(window.localStorage.getItem(RECENT_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+interface ShareEventFormProps {
+  event: CultureEvent;
+  /** Called after a successful send so the recipient can be tracked as invited. */
+  onInvited: (invitees: string) => void;
+  onClose: () => void;
+}
+
+export function ShareEventForm({ event, onInvited, onClose }: ShareEventFormProps) {
+  const listId = useId();
+  const [to, setTo] = useState("");
+  const [message, setMessage] = useState("");
+  const [addInvitee, setAddInvitee] = useState(true);
+  const [state, setState] = useState<{ kind: "idle" | "sending" | "ok" | "error"; text?: string }>({ kind: "idle" });
+  const [recent, setRecent] = useState<string[]>(() => (typeof window === "undefined" ? [] : loadRecent()));
+
+  const send = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const address = to.trim();
+    setState({ kind: "sending" });
+    try {
+      const response = await fetch(`/api/events/${event.id}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: address, message }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || `Fehler ${response.status}`);
+
+      const next = [address, ...recent.filter((r) => r !== address)].slice(0, 6);
+      setRecent(next);
+      try {
+        window.localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+      } catch {}
+
+      if (addInvitee) {
+        const current = (event.invitees || "").split(",").map((s) => s.trim()).filter(Boolean);
+        if (!current.includes(address)) onInvited([...current, address].join(", "));
+      }
+      setState({ kind: "ok", text: `Mail an ${address} gesendet` });
+      setTo("");
+      setMessage("");
+    } catch (error) {
+      setState({ kind: "error", text: error instanceof Error ? error.message : "Senden fehlgeschlagen" });
+    }
+  };
+
+  return (
+    <form onSubmit={send} className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <div className="text-sm font-medium text-slate-700">Per Mail auf dieses Event hinweisen</div>
+
+      <div className="space-y-1">
+        <label htmlFor={`${listId}-to`} className="text-sm text-slate-600">Empfänger</label>
+        <Input
+          id={`${listId}-to`}
+          type="email"
+          required
+          autoComplete="email"
+          list={listId}
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          placeholder="name@beispiel.at"
+        />
+        <datalist id={listId}>
+          {recent.map((r) => (
+            <option key={r} value={r} />
+          ))}
+        </datalist>
+      </div>
+
+      <div className="space-y-1">
+        <label htmlFor={`${listId}-msg`} className="text-sm text-slate-600">Persönliche Nachricht (optional)</label>
+        <Textarea
+          id={`${listId}-msg`}
+          value={message}
+          maxLength={1000}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder={`z. B. „Hast du Lust, mitzukommen?“`}
+          rows={3}
+        />
+      </div>
+
+      <p className="text-xs text-slate-500">
+        Die Mail enthält Titel, Datum, Ort, Preis, Kurzbeschreibung und den Link zum Event.
+      </p>
+
+      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+        <input
+          type="checkbox"
+          checked={addInvitee}
+          onChange={(e) => setAddInvitee(e.target.checked)}
+          className="h-4 w-4"
+        />
+        Zu Einladungen hinzufügen
+      </label>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="submit" size="sm" disabled={state.kind === "sending"}>
+          {state.kind === "sending" ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <Send className="mr-2 h-4 w-4" aria-hidden="true" />
+          )}
+          Senden
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={onClose}>
+          Schließen
+        </Button>
+      </div>
+
+      <div aria-live="polite">
+        {state.kind === "ok" && (
+          <p className="flex items-center gap-2 text-sm text-emerald-700">
+            <Check className="h-4 w-4" aria-hidden="true" />
+            {state.text}
+          </p>
+        )}
+        {state.kind === "error" && <p className="text-sm text-red-700">Senden fehlgeschlagen: {state.text}</p>}
+      </div>
+    </form>
+  );
+}
