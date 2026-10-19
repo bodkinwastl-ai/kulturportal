@@ -119,3 +119,27 @@ export function groupByVenue<T extends { venue?: string; city?: string }>(events
     name: g.key === "none" ? "Ohne Ortsangabe" : [...spellings.entries()].sort((a, b) => b[1] - a[1])[0][0],
   }));
 }
+
+/** Whole calendar days between `dateStr` and today (0 = today); null if missing/invalid. */
+export function daysSince(dateStr?: string, now: Date = new Date()): number | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  return Math.round((day(now) - day(d)) / 86_400_000);
+}
+
+export function agoLabel(days: number): string {
+  if (days <= 0) return "heute";
+  if (days === 1) return "gestern";
+  return `vor ${days} Tagen`;
+}
+
+/** Hostname of a URL, or null when the URL is empty or malformed (never throws). */
+export function hostOf(url?: string): string | null {
+  try {
+    return url ? new URL(url).hostname.replace(/^www\./, "") : null;
+  } catch {
+    return null;
+  }
+}

@@ -16,6 +16,8 @@ export type CultureEvent = {
   region?: string;
   categories: string[];
   sourceName?: string;
+  /** Notion page id of the source (relation); resolved to sourceName on the server */
+  sourceId?: string;
   url?: string;
   description?: string;
   price?: string;

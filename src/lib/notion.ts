@@ -2,6 +2,7 @@ import { Client } from "@notionhq/client";
 import { CultureEvent, CultureSource } from "./types";
 import { mockEvents, mockSources } from "./mock-events";
 import { queryAll } from "./notion-query";
+import { resolveSourceNames } from "./source-names";
 
 // Notion-Datenbank IDs aus dem Briefing
 const EVENTS_DB_ID = "3f85e96f-2473-817b-b31e-d0ea97414538";
@@ -58,7 +59,9 @@ function mapNotionToCultureEvent(page: any): CultureEvent {
     city: extractNotionProperty(props.Stadt) || extractNotionProperty(props.City) || "",
     region: extractNotionProperty(props.Region) || "",
     categories: extractNotionProperty(props.Kategorien) || extractNotionProperty(props.Categories) || [],
-    sourceName: extractNotionProperty(props.Quelle) || extractNotionProperty(props.Source) || "",
+    // "Quelle" is a relation: it yields a page id that is resolved to the name in fetchEvents
+    sourceId: props.Quelle?.type === "relation" ? extractNotionProperty(props.Quelle) || undefined : undefined,
+    sourceName: props.Quelle?.type === "relation" ? "" : extractNotionProperty(props.Quelle) || extractNotionProperty(props.Source) || "",
     url: extractNotionProperty(props.URL) || "",
     description: extractNotionProperty(props.Beschreibung) || extractNotionProperty(props.Description) || "",
     price: extractNotionProperty(props.Preis) || extractNotionProperty(props.Price) || "",
@@ -84,7 +87,8 @@ export async function fetchEvents(): Promise<CultureEvent[]> {
     const rows = await queryAll(EVENTS_DB_ID, process.env.NOTION_TOKEN!, {
       sorts: [{ property: "Datum", direction: "ascending" }],
     });
-    return rows.map(mapNotionToCultureEvent);
+    const events = rows.map(mapNotionToCultureEvent);
+    return resolveSourceNames(events, await getCultureSources());
   } catch (error) {
     console.error("Fehler beim Laden der Events aus Notion:", error);
     console.log("Fallback zu Mock-Daten");
@@ -104,7 +108,8 @@ export async function getEventById(eventId: string): Promise<CultureEvent | null
     },
   });
   if (!response.ok) return null;
-  return mapNotionToCultureEvent(await response.json());
+  const [event] = resolveSourceNames([mapNotionToCultureEvent(await response.json())], await getCultureSources());
+  return event;
 }
 
 // Event in Notion aktualisieren
@@ -310,44 +315,39 @@ export async function updateCultureSource(sourceId: string, updates: Partial<Cul
       };
     }
     
-    const response = await fetch(`https://api.notion.com/v1/pages/${sourceId}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28',
-      },
-      body: JSON.stringify({ properties }),
-    });
-    
-    return response.ok;
+    return await patchPage(sourceId, { properties });
   } catch (error) {
     console.error("Fehler beim Aktualisieren der Source:", error);
-    return false;
+    throw error;
   }
 }
 
-// Delete source from Notion
-export async function deleteCultureSource(sourceId: string): Promise<boolean> {
-  try {
-    // Notion doesn't have delete, so we set to archived
-    const response = await fetch(`https://api.notion.com/v1/pages/${sourceId}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28',
-      },
-      body: JSON.stringify({
-        archived: true
-      }),
-    });
-    
-    return response.ok;
-  } catch (error) {
-    console.error("Fehler beim Löschen der Source:", error);
-    return false;
+/** PATCH a Notion page; throws with Notion's message. Without a token (demo mode) it only simulates. */
+async function patchPage(pageId: string, body: Record<string, unknown>): Promise<boolean> {
+  if (!process.env.NOTION_TOKEN) return true;
+  const response = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
+      'Content-Type': 'application/json',
+      'Notion-Version': '2022-06-28',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err?.message || `Notion antwortete mit ${response.status}`);
   }
+  return true;
+}
+
+// Delete source from Notion (Notion has no delete: the page is archived and can be restored)
+export async function deleteCultureSource(sourceId: string): Promise<boolean> {
+  return patchPage(sourceId, { archived: true });
+}
+
+export async function restoreCultureSource(sourceId: string): Promise<boolean> {
+  return patchPage(sourceId, { archived: false });
 }
 
 // Helper function to map Notion page to CultureSource

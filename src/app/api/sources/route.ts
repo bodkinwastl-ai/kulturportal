@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCultureSources, createCultureSource, updateCultureSource, deleteCultureSource } from "@/lib/notion";
+import { getCultureSources, createCultureSource } from "@/lib/notion";
 import { mockSources } from "@/lib/mock-events";
 
 // Force dynamic rendering
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error creating source:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to create source" },
+      { success: false, error: error instanceof Error ? error.message : "Failed to create source" },
       { status: 500 }
     );
   }

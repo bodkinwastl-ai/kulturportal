@@ -13,9 +13,10 @@ export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   // The share route sends real email, so it must never be open to the public.
   const isShare = /^\/api\/events\/[^/]+\/share$/.test(path);
+  // Writes (POST/PATCH/PUT/DELETE) need the portal login; plain reads of the API stay open.
+  const isWrite = path.startsWith("/api/") && request.method !== "GET" && request.method !== "HEAD";
 
-  // Skip auth for other API routes
-  if (path.startsWith("/api/") && !isShare) {
+  if (path.startsWith("/api/") && !isShare && !isWrite) {
     return NextResponse.next();
   }
 
