@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, CalendarDays, List, LayoutDashboard } from "lucide-react";
+import { Calendar, CalendarDays, List, LayoutDashboard, MapPin } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ const navigation = [
   { name: "Übersicht", href: "/", icon: LayoutDashboard },
   { name: "Woche", href: "/week", icon: CalendarDays },
   { name: "Events", href: "/events", icon: Calendar },
+  { name: "Orte", href: "/venues", icon: MapPin },
   { name: "Quellen", href: "/sources", icon: List },
 ];
 
@@ -84,7 +85,7 @@ export function AppShell({ children, notionConnected = false }: AppShellProps) {
         aria-label="Hauptnavigation"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
       >
-        <ul className="grid grid-cols-4">
+        <ul className="grid grid-cols-5">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
             return (

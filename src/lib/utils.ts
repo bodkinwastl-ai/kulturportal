@@ -66,3 +66,33 @@ export function parseDateParam(value: string | null): Date | null {
 export function isSameDay(a: Date, b: Date): boolean {
   return dayKey(a) === dayKey(b);
 }
+
+const norm = (s?: string) => (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+
+/** Grouping key for a venue: same name + city (case/space-insensitive). */
+export function venueKey(e: { venue?: string; city?: string }): string {
+  const venue = norm(e.venue);
+  return venue ? `${venue}|${norm(e.city)}` : "none";
+}
+
+export type VenueGroup<T> = { key: string; name: string; city: string; events: T[] };
+
+/** Groups events by venue; events inside a group keep their incoming order. */
+export function groupByVenue<T extends { venue?: string; city?: string }>(events: T[]): VenueGroup<T>[] {
+  const groups = new Map<string, VenueGroup<T>>();
+  for (const e of events) {
+    const key = venueKey(e);
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        key,
+        name: key === "none" ? "Ohne Ortsangabe" : (e.venue ?? "").trim(),
+        city: key === "none" ? "" : (e.city ?? "").trim(),
+        events: [],
+      };
+      groups.set(key, group);
+    }
+    group.events.push(e);
+  }
+  return [...groups.values()];
+}
