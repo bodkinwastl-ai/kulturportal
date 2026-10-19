@@ -1,6 +1,7 @@
 import { Client } from "@notionhq/client";
 import { CultureEvent, CultureSource } from "./types";
 import { mockEvents, mockSources } from "./mock-events";
+import { queryAll } from "./notion-query";
 
 // Notion-Datenbank IDs aus dem Briefing
 const EVENTS_DB_ID = "3f85e96f-2473-817b-b31e-d0ea97414538";
@@ -80,30 +81,10 @@ export async function fetchEvents(): Promise<CultureEvent[]> {
   }
   
   try {
-    // Vereinfachte Query ohne Types
-    const response = await fetch(`https://api.notion.com/v1/databases/${EVENTS_DB_ID}/query`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28',
-      },
-      body: JSON.stringify({
-        sorts: [
-          {
-            property: "Datum",
-            direction: "ascending",
-          },
-        ],
-      }),
+    const rows = await queryAll(EVENTS_DB_ID, process.env.NOTION_TOKEN!, {
+      sorts: [{ property: "Datum", direction: "ascending" }],
     });
-    
-    if (!response.ok) {
-      throw new Error(`Notion API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.results.map(mapNotionToCultureEvent);
+    return rows.map(mapNotionToCultureEvent);
   } catch (error) {
     console.error("Fehler beim Laden der Events aus Notion:", error);
     console.log("Fallback zu Mock-Daten");
@@ -221,26 +202,8 @@ export async function getCultureSources(): Promise<CultureSource[]> {
   console.log("getCultureSources: Starting with NOTION_TOKEN present");
   
   try {
-    const response = await fetch(`https://api.notion.com/v1/databases/${SOURCES_DB_ID}/query`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28',
-      },
-      body: JSON.stringify({})
-    });
-    
-    console.log(`getCultureSources: Notion API response status: ${response.status}`);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`getCultureSources: Notion API error ${response.status}: ${errorText}`);
-      throw new Error(`Notion API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    const sources = data.results.map(mapNotionToCultureSource);
+    const rows = await queryAll(SOURCES_DB_ID, process.env.NOTION_TOKEN);
+    const sources = rows.map(mapNotionToCultureSource);
     console.log(`getCultureSources: Successfully loaded ${sources.length} sources from Notion`);
     return sources;
   } catch (error) {
