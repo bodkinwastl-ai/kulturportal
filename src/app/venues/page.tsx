@@ -3,9 +3,9 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, MapPin, Search } from "lucide-react";
+import { ArrowLeft, Search } from "lucide-react";
 import { useEvents } from "@/lib/use-events";
-import { groupByVenue, isUpcoming } from "@/lib/utils";
+import { cn, groupByVenue, isUpcoming } from "@/lib/utils";
 import { AppShell } from "@/components/app-shell";
 import { EventGroups } from "@/components/event-groups";
 import { EventDetailDrawer } from "@/components/event-detail-drawer";
@@ -24,6 +24,7 @@ function VenuesView() {
   } = useEvents();
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [city, setCity] = useState("");
   const [showPast, setShowPast] = useState(false);
 
   // Ignored events never count; groups are built from all events so a venue keeps its name
@@ -118,9 +119,16 @@ function VenuesView() {
 
   // ---------- List ----------
   const q = query.trim().toLowerCase();
-  const list = withUpcoming
-    .filter((g) => !q || `${g.name} ${g.city}`.toLowerCase().includes(q))
-    .sort((a, b) => byDate(a.upcoming[0], b.upcoming[0]));
+  const matching = withUpcoming.filter((g) => !q || `${g.name} ${g.city}`.toLowerCase().includes(q));
+
+  // Cities, busiest first; chips filter the list
+  const cityTotals = new Map<string, number>();
+  for (const g of matching) {
+    const city = g.city || "Ohne Stadt";
+    cityTotals.set(city, (cityTotals.get(city) ?? 0) + g.upcoming.length);
+  }
+  const cities = [...cityTotals.entries()].sort((a, b) => b[1] - a[1]);
+  const visibleCities = city ? cities.filter(([c]) => c === city) : cities;
 
   return (
     <AppShell notionConnected={notionConnected}>
@@ -132,49 +140,84 @@ function VenuesView() {
           </p>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          <Input
-            aria-label="Orte durchsuchen"
-            placeholder="Orte durchsuchen…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="pl-10"
-          />
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <Input
+              aria-label="Orte durchsuchen"
+              placeholder="Orte durchsuchen…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {cities.length > 1 && (
+            <div role="group" aria-label="Stadt" className="flex flex-wrap gap-2">
+              {[["", matching.reduce((n, g) => n + g.upcoming.length, 0)] as [string, number], ...cities].map(([c, n]) => (
+                <button
+                  key={c || "all"}
+                  type="button"
+                  aria-pressed={city === c}
+                  onClick={() => setCity(c)}
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-sm transition-colors",
+                    city === c
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-input bg-card text-foreground hover:bg-secondary"
+                  )}
+                >
+                  {c || "Alle"} <span className={city === c ? "opacity-80" : "text-muted-foreground"}>{n}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {loading ? (
           spinner
-        ) : list.length > 0 ? (
-          <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {list.map((g) => {
-              const next = new Date(g.upcoming[0].date);
+        ) : visibleCities.length > 0 ? (
+          <div className="space-y-8">
+            {visibleCities.map(([cityName, total]) => {
+              const houses = matching
+                .filter((g) => (g.city || "Ohne Stadt") === cityName)
+                .sort((a, b) => b.upcoming.length - a.upcoming.length || a.name.localeCompare(b.name, "de"));
               return (
-                <li key={g.key}>
-                  <Link
-                    href={`/venues?ort=${encodeURIComponent(g.key)}`}
-                    className="enterprise-card flex h-full flex-col gap-2 p-4 sm:p-5"
-                  >
-                    <span className="font-display text-lg font-semibold leading-snug text-foreground">{g.name}</span>
-                    {g.city && (
-                      <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        {g.city}
-                      </span>
-                    )}
-                    <span className="mt-auto pt-2 text-sm text-foreground">
-                      <strong className="font-semibold">{g.upcoming.length}</strong>{" "}
-                      {g.upcoming.length === 1 ? "kommendes Event" : "kommende Events"}
-                      <span className="text-muted-foreground">
-                        {" · nächstes "}
-                        {next.toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }).replace(".,", ",")}
-                      </span>
+                <section key={cityName} aria-labelledby={`city-${cityName}`}>
+                  <h2 id={`city-${cityName}`} className="mb-3 flex items-baseline gap-2 border-b border-border pb-2 text-xl font-semibold">
+                    {cityName}
+                    <span className="font-sans text-sm font-normal text-muted-foreground">
+                      {houses.length} {houses.length === 1 ? "Ort" : "Orte"} · {total} {total === 1 ? "Event" : "Events"}
                     </span>
-                  </Link>
-                </li>
+                  </h2>
+                  <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                    {houses.map((g) => {
+                      const next = new Date(g.upcoming[0].date);
+                      return (
+                        <li key={g.key}>
+                          <Link
+                            href={`/venues?ort=${encodeURIComponent(g.key)}`}
+                            className="enterprise-card flex items-center justify-between gap-3 px-4 py-3"
+                          >
+                            <span className="min-w-0">
+                              <span className="block truncate font-medium text-foreground">{g.name}</span>
+                              <span className="block text-xs text-muted-foreground">
+                                nächstes{" "}
+                                {next.toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }).replace(".,", ",")}
+                              </span>
+                            </span>
+                            <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-sm font-semibold text-foreground">
+                              {g.upcoming.length}
+                              <span className="sr-only"> kommende Events</span>
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
               );
             })}
-          </ul>
+          </div>
         ) : (
           <p className="text-muted-foreground">{q ? "Kein Ort passt zur Suche." : "Noch keine Orte mit kommenden Events."}</p>
         )}

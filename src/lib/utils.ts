@@ -69,30 +69,53 @@ export function isSameDay(a: Date, b: Date): boolean {
 
 const norm = (s?: string) => (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 
-/** Grouping key for a venue: same name + city (case/space-insensitive). */
+// Notion's venue is free text. Rooms ("Großer Saal") and spelling variants would split one
+// house into many places, so venues are reduced to the house. Edit this list for odd cases.
+const VENUE_ALIASES: Record<string, string> = {
+  "schauraum, schauspielhaus graz": "Schauspielhaus Graz",
+  "konsole, schauspielhaus graz": "Schauspielhaus Graz",
+  "jazzit musik club": "Jazzit",
+  "jazzit:bar": "Jazzit",
+  "lichtspiele katsdorf": "Kino Katsdorf",
+  "mozarteum": "Stiftung Mozarteum",
+  "ai:at ai factory austria": "AI Factory Austria",
+};
+
+/** "Brucknerhaus Linz - Main Hall" / "Brucknerhaus, Großer Saal" -> "Brucknerhaus Linz" / "Brucknerhaus" */
+export function houseName(venue?: string): string {
+  const clean = (venue ?? "").trim().replace(/\s+/g, " ");
+  const alias = VENUE_ALIASES[clean.toLowerCase()];
+  if (alias) return alias;
+  return clean.split(/\s[-–—]\s|,\s*/)[0].trim();
+}
+
+/** Grouping key for a venue: house + city, ignoring case, rooms and a trailing city name. */
 export function venueKey(e: { venue?: string; city?: string }): string {
-  const venue = norm(e.venue);
-  return venue ? `${venue}|${norm(e.city)}` : "none";
+  const house = norm(houseName(e.venue));
+  if (!house) return "none";
+  const city = norm(e.city);
+  const withoutCity = city && house.endsWith(` ${city}`) ? house.slice(0, -city.length).trim() : house;
+  return `${withoutCity}|${city}`;
 }
 
 export type VenueGroup<T> = { key: string; name: string; city: string; events: T[] };
 
-/** Groups events by venue; events inside a group keep their incoming order. */
+/** Groups events by house; the most frequent spelling becomes the display name. */
 export function groupByVenue<T extends { venue?: string; city?: string }>(events: T[]): VenueGroup<T>[] {
-  const groups = new Map<string, VenueGroup<T>>();
+  const groups = new Map<string, VenueGroup<T> & { spellings: Map<string, number> }>();
   for (const e of events) {
     const key = venueKey(e);
     let group = groups.get(key);
     if (!group) {
-      group = {
-        key,
-        name: key === "none" ? "Ohne Ortsangabe" : (e.venue ?? "").trim(),
-        city: key === "none" ? "" : (e.city ?? "").trim(),
-        events: [],
-      };
+      group = { key, name: "", city: key === "none" ? "" : (e.city ?? "").trim(), events: [], spellings: new Map() };
       groups.set(key, group);
     }
     group.events.push(e);
+    const spelling = houseName(e.venue);
+    group.spellings.set(spelling, (group.spellings.get(spelling) ?? 0) + 1);
   }
-  return [...groups.values()];
+  return [...groups.values()].map(({ spellings, ...g }) => ({
+    ...g,
+    name: g.key === "none" ? "Ohne Ortsangabe" : [...spellings.entries()].sort((a, b) => b[1] - a[1])[0][0],
+  }));
 }
