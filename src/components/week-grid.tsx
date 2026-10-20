@@ -29,7 +29,7 @@ export function WeekGrid({ weekStart, events, onOpen }: WeekGridProps) {
           <section key={day.toISOString()} aria-label={longLabel} className={cn("min-w-0", isPastDay && "opacity-50")}>
             <header
               className={cn(
-                "mb-2 flex items-baseline gap-2 border-b pb-2 lg:flex-col lg:items-start lg:gap-0",
+                "mb-2 flex items-baseline gap-2 border-b-2 pb-2 lg:flex-col lg:items-start lg:gap-0",
                 isToday ? "border-accent" : "border-border"
               )}
             >
@@ -43,7 +43,7 @@ export function WeekGrid({ weekStart, events, onOpen }: WeekGridProps) {
                 </span>
               </span>
             </header>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {dayEvents.length > 0 ? (
                 dayEvents.map((event) => <EventChip key={event.id} event={event} onOpen={() => onOpen(event)} />)
               ) : (

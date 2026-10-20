@@ -52,7 +52,7 @@ function InlineField({
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {icon}
           {label}
         </span>
@@ -123,14 +123,20 @@ export function EventDetailDrawer({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] max-w-3xl gap-0 overflow-y-auto rounded-xl border-border bg-background p-0">
+      <DialogContent className="max-h-[92vh] max-w-3xl gap-0 overflow-y-auto rounded-lg border-border bg-background p-0">
         {/* Header */}
         <DialogHeader className="space-y-3 border-b border-border p-5 pr-12 sm:p-6 sm:pr-14">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {event.categories[0] && (
+              <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className={cn("h-2 w-2 rounded-sm", categoryColor(event.categories[0]).bar)} aria-hidden="true" />
+                {event.categories[0]}
+              </span>
+            )}
             <StatusPill status={event.status} size="sm" />
             {isPast && <span className="text-xs font-medium text-amber-700">Vergangen</span>}
           </div>
-          <DialogTitle className="font-display text-2xl font-semibold leading-snug text-foreground sm:text-3xl">
+          <DialogTitle className="font-display text-2xl font-semibold leading-snug text-balance text-foreground sm:text-3xl">
             {event.title}
           </DialogTitle>
           <DialogDescription asChild>
@@ -152,7 +158,7 @@ export function EventDetailDrawer({
         <div className="grid gap-6 p-5 sm:p-6 md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
           {/* Actions first on mobile (forwarding stays near the top), right column on desktop */}
           <aside className="space-y-5 md:order-2">
-            <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+            <div className="space-y-4 rounded-lg border border-border bg-card p-4">
               <ShareEventForm event={event} onInvited={onInviteesChange} />
             </div>
 
@@ -184,7 +190,7 @@ export function EventDetailDrawer({
           <div className="min-w-0 space-y-5 md:order-1">
             {/* Status */}
             <div>
-              <div className="mb-2 text-sm font-medium text-foreground">Status</div>
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</div>
               <div role="group" aria-label="Status ändern" className="flex flex-wrap gap-2">
                 {STATUS_CHOICES.map(({ status, label }) => (
                   <Button
@@ -204,9 +210,9 @@ export function EventDetailDrawer({
             {event.description && <p className="text-sm leading-relaxed text-foreground">{event.description}</p>}
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              {event.categories.length > 0 && (
+              {event.categories.length > 1 && (
                 <ul className="flex flex-wrap gap-1.5" aria-label="Kategorien">
-                  {event.categories.map((category) => (
+                  {event.categories.slice(1).map((category) => (
                     <li key={category} className={cn("rounded-md px-2 py-0.5 text-xs font-medium", categoryColor(category).chip)}>
                       {category}
                     </li>
@@ -217,7 +223,7 @@ export function EventDetailDrawer({
             </div>
 
             <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
-              <span className="text-sm font-medium text-foreground">Bewertung</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Bewertung</span>
               <div className="flex gap-0.5" role="group" aria-label="Bewertung">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -226,12 +232,12 @@ export function EventDetailDrawer({
                     onClick={() => onRatingChange(star)}
                     aria-label={`${star} von 5 Sternen`}
                     aria-pressed={star <= (event.rating || 0)}
-                    className="rounded p-1"
+                    className="rounded p-1 transition-transform duration-150 active:scale-90"
                   >
                     <Star
                       className={cn(
-                        "h-5 w-5 transition-colors",
-                        star <= (event.rating || 0) ? "fill-amber-400 text-amber-500" : "text-stone-300 hover:text-amber-400"
+                        "h-5 w-5 transition-colors duration-150",
+                        star <= (event.rating || 0) ? "fill-amber-400 text-amber-500" : "text-stone-300 [@media(hover:hover)]:hover:text-amber-400"
                       )}
                     />
                   </button>

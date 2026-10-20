@@ -33,7 +33,7 @@ export function PrioritySegment({
             aria-pressed={active}
             onClick={() => !active && onChange(o.value)}
             className={cn(
-              "rounded px-2.5 py-1 text-xs font-medium transition-colors",
+              "rounded px-2.5 py-1 text-xs font-medium transition-[background-color,color,transform] duration-150 active:scale-[0.95]",
               active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             )}
           >

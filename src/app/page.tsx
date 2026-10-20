@@ -136,7 +136,7 @@ export default function Dashboard() {
         </div>
 
         {/* Triage strip: "Neu" is the task, everything else is context */}
-        <dl className="grid grid-cols-3 divide-x divide-y divide-border overflow-hidden rounded-xl border border-border bg-card md:grid-cols-6 md:divide-y-0">
+        <dl className="grid grid-cols-3 divide-x divide-y divide-border overflow-hidden rounded-lg border border-border bg-card md:grid-cols-6 md:divide-y-0">
           {[
             { label: "Neu", value: stats.neu, strong: true },
             { label: "Interessant", value: stats.interessant },

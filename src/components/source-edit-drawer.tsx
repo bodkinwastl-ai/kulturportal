@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
+import { badgeVariants } from "@/components/ui/badge";
 import {
   Sheet,
   SheetContent,
@@ -138,8 +138,8 @@ export function SourceEditDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="drawer-content w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader>
+      <SheetContent className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-md sm:p-0">
+        <SheetHeader className="border-b border-border p-5 pr-14 sm:p-6 sm:pr-14">
           <SheetTitle>
             {isCreating ? "Neue Quelle hinzufügen" : "Quelle bearbeiten"}
           </SheetTitle>
@@ -151,7 +151,7 @@ export function SourceEditDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-6 mt-6">
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5 sm:p-6">
           {/* Basic Info */}
           <div className="space-y-4">
             <div>
@@ -236,15 +236,16 @@ export function SourceEditDrawer({
             {formData.regions.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {formData.regions.map(region => (
-                  <Badge 
-                    key={region} 
-                    variant="secondary" 
-                    className="cursor-pointer"
+                  <button
+                    key={region}
+                    type="button"
+                    aria-label={`${region} entfernen`}
+                    className={`${badgeVariants({ variant: "secondary" })} gap-1 active:scale-95 transition-transform duration-150`}
                     onClick={() => removeRegion(region)}
                   >
                     {region}
-                    <X className="w-3 h-3 ml-1" />
-                  </Badge>
+                    <X className="h-3 w-3" aria-hidden="true" />
+                  </button>
                 ))}
               </div>
             )}
@@ -271,15 +272,16 @@ export function SourceEditDrawer({
             {formData.categories.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {formData.categories.map(category => (
-                  <Badge 
-                    key={category} 
-                    variant="outline" 
-                    className="cursor-pointer"
+                  <button
+                    key={category}
+                    type="button"
+                    aria-label={`${category} entfernen`}
+                    className={`${badgeVariants({ variant: "outline" })} gap-1 active:scale-95 transition-transform duration-150`}
                     onClick={() => removeCategory(category)}
                   >
                     {category}
-                    <X className="w-3 h-3 ml-1" />
-                  </Badge>
+                    <X className="h-3 w-3" aria-hidden="true" />
+                  </button>
                 ))}
               </div>
             )}
@@ -299,17 +301,17 @@ export function SourceEditDrawer({
               className="mt-1 min-h-[80px]"
             />
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex space-x-3 pt-4 border-t">
-            <Button onClick={handleSave} className="flex-1">
-              <Save className="w-4 h-4 mr-2" />
-              {isCreating ? "Quelle erstellen" : "Änderungen speichern"}
-            </Button>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Abbrechen
-            </Button>
-          </div>
+        {/* Actions */}
+        <div className="flex shrink-0 gap-3 border-t border-border bg-card p-5 sm:p-6">
+          <Button onClick={handleSave} className="flex-1">
+            <Save className="w-4 h-4 mr-2" />
+            {isCreating ? "Quelle erstellen" : "Änderungen speichern"}
+          </Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Abbrechen
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

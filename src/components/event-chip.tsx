@@ -23,15 +23,16 @@ export function EventChip({ event, onOpen }: { event: CultureEvent; onOpen: () =
     <button
       type="button"
       onClick={onOpen}
-      className="enterprise-card relative block w-full overflow-hidden p-2.5 pl-4 text-left"
+      className="enterprise-card block w-full p-2.5 text-left"
     >
-      <span className={cn("absolute inset-y-0 left-0 w-1.5", stripe)} aria-hidden="true" />
       <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <span className={cn("h-2 w-2 shrink-0 rounded-sm", stripe)} aria-hidden="true" />
+        <span className="whitespace-nowrap font-medium tabular-nums">{time}</span>
         <span
-          className={cn("h-2 w-2 shrink-0 rounded-full", STATUS_DOT[event.status] ?? "bg-stone-400")}
+          className={cn("h-1.5 w-1.5 shrink-0 rounded-full", STATUS_DOT[event.status] ?? "bg-stone-400")}
+          title={event.status}
           aria-hidden="true"
         />
-        <span className="font-medium">{time} Uhr</span>
         <span className="sr-only">Status {event.status}</span>
         <span className="ml-auto flex items-center gap-1">
           {event.rating ? <Star className="h-3 w-3 fill-amber-400 text-amber-500" aria-label={`${event.rating} von 5`} /> : null}

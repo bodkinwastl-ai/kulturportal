@@ -24,14 +24,14 @@ export function AppShell({ children, notionConnected = false }: AppShellProps) {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-border bg-card">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-8">
-            <Link href="/" className="font-display text-xl font-semibold tracking-tight text-foreground">
+          <div className="flex h-full items-stretch gap-8">
+            <Link href="/" className="flex items-center font-display text-xl font-semibold tracking-tight text-foreground">
               Kulturportal
             </Link>
 
-            <nav aria-label="Hauptnavigation" className="hidden md:flex md:gap-1">
+            <nav aria-label="Hauptnavigation" className="hidden md:flex md:gap-5">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -40,10 +40,10 @@ export function AppShell({ children, notionConnected = false }: AppShellProps) {
                     href={item.href}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      "-mb-px flex items-center gap-2 border-b-2 text-sm font-medium transition-colors duration-150",
                       isActive
-                        ? "bg-secondary text-foreground"
-                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        ? "border-accent text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
                     )}
                   >
                     <item.icon className="h-4 w-4" aria-hidden="true" />
@@ -56,10 +56,8 @@ export function AppShell({ children, notionConnected = false }: AppShellProps) {
 
           <span
             className={cn(
-              "inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset whitespace-nowrap",
-              notionConnected
-                ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
-                : "bg-amber-50 text-amber-900 ring-amber-200"
+              "inline-flex items-center gap-2 text-xs font-medium whitespace-nowrap",
+              notionConnected ? "text-emerald-800" : "text-amber-900"
             )}
           >
             <span
@@ -94,7 +92,8 @@ export function AppShell({ children, notionConnected = false }: AppShellProps) {
                   href={item.href}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "flex min-h-14 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors",
+                    "flex min-h-14 flex-col items-center justify-center gap-1 text-xs font-medium",
+                    "active:scale-95 transition-[color,transform] duration-150",
                     isActive ? "text-accent" : "text-muted-foreground"
                   )}
                 >

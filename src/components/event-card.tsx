@@ -39,25 +39,18 @@ export function EventCard({ event, onClick, onStatusChange, onCalendarToggle }: 
 
   const showTriage = event.status === "Neu";
   const showCalendar = event.status === "Neu" || event.status === "Interessant";
-  const visibleCategories = event.categories.slice(0, 2);
-  const extraCategories = event.categories.length - visibleCategories.length;
+  const visibleCategories = event.categories.slice(1, 3);
+  const extraCategories = event.categories.length - 1 - visibleCategories.length;
 
   return (
     <article
       className={cn(
-        "enterprise-card group relative flex h-full cursor-pointer flex-col overflow-hidden p-4 pl-5 sm:p-5 sm:pl-6",
-        isToday && "ring-2 ring-accent/40",
+        "enterprise-card group relative flex h-full cursor-pointer flex-col overflow-hidden p-4 sm:p-5",
+        isToday && "border-accent",
         isPast && "opacity-70"
       )}
       onClick={onClick}
     >
-      {/* Category colour stripe (first category) */}
-      {event.categories[0] && (
-        <span
-          className={cn("absolute inset-y-0 left-0 w-1.5", categoryColor(event.categories[0]).bar)}
-          aria-hidden="true"
-        />
-      )}
       <div className="flex gap-4">
         {/* Date tile */}
         <div className="flex w-12 shrink-0 flex-col items-center pt-0.5 text-center" aria-hidden="true">
@@ -68,12 +61,18 @@ export function EventCard({ event, onClick, onStatusChange, onCalendarToggle }: 
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
+          <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {event.categories[0] && (
+              <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className={cn("h-2 w-2 rounded-sm", categoryColor(event.categories[0]).bar)} aria-hidden="true" />
+                {event.categories[0]}
+              </span>
+            )}
             <StatusPill status={event.status} size="sm" />
             {isToday && <span className="text-xs font-semibold text-accent">Heute</span>}
           </div>
 
-          <h3 className="font-display text-lg font-semibold leading-snug text-foreground">
+          <h3 className="font-display text-lg font-semibold leading-snug text-balance text-foreground">
             <button
               type="button"
               onClick={stop(onClick)}

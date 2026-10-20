@@ -160,7 +160,7 @@ function VenuesView() {
                   aria-pressed={city === c}
                   onClick={() => setCity(c)}
                   className={cn(
-                    "rounded-full border px-3 py-1.5 text-sm transition-colors",
+                    "rounded-md border px-3 py-1.5 text-sm transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]",
                     city === c
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-input bg-card text-foreground hover:bg-secondary"
@@ -176,16 +176,16 @@ function VenuesView() {
         {loading ? (
           spinner
         ) : visibleCities.length > 0 ? (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {visibleCities.map(([cityName, total]) => {
               const houses = matching
                 .filter((g) => (g.city || "Ohne Stadt") === cityName)
                 .sort((a, b) => b.upcoming.length - a.upcoming.length || a.name.localeCompare(b.name, "de"));
               return (
                 <section key={cityName} aria-labelledby={`city-${cityName}`}>
-                  <h2 id={`city-${cityName}`} className="mb-3 flex items-baseline gap-2 border-b border-border pb-2 text-xl font-semibold">
+                  <h2 id={`city-${cityName}`} className="section-label">
                     {cityName}
-                    <span className="font-sans text-sm font-normal text-muted-foreground">
+                    <span className="font-normal normal-case tracking-normal">
                       {houses.length} {houses.length === 1 ? "Ort" : "Orte"} · {total} {total === 1 ? "Event" : "Events"}
                     </span>
                   </h2>
@@ -205,7 +205,7 @@ function VenuesView() {
                                 {next.toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }).replace(".,", ",")}
                               </span>
                             </span>
-                            <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-sm font-semibold text-foreground">
+                            <span className="shrink-0 rounded-md bg-secondary px-2 py-0.5 text-sm font-semibold text-foreground">
                               {g.upcoming.length}
                               <span className="sr-only"> kommende Events</span>
                             </span>

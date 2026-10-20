@@ -93,7 +93,7 @@ export default function SourcesPage() {
           </Button>
         </div>
 
-        <dl className="grid grid-cols-3 divide-x divide-y divide-border overflow-hidden rounded-xl border border-border bg-card md:grid-cols-6 md:divide-y-0">
+        <dl className="grid grid-cols-3 divide-x divide-y divide-border overflow-hidden rounded-lg border border-border bg-card md:grid-cols-6 md:divide-y-0">
           {stats.map((s) => (
             <div key={s.label} className="px-4 py-3">
               <dt className="text-xs font-medium text-muted-foreground">{s.label}</dt>
@@ -121,7 +121,7 @@ export default function SourcesPage() {
                 aria-pressed={filter === f.value}
                 onClick={() => setFilter(f.value)}
                 className={cn(
-                  "rounded-full border px-3 py-1.5 text-sm transition-colors",
+                  "rounded-md border px-3 py-1.5 text-sm transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]",
                   filter === f.value
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-input bg-card text-foreground hover:bg-secondary"
@@ -147,17 +147,17 @@ export default function SourcesPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {groups.map((group) => (
               <section key={group.priority} aria-labelledby={`prio-${group.priority}`}>
                 <h2
                   id={`prio-${group.priority}`}
-                  className="mb-3 flex items-baseline gap-2 border-b border-border pb-2 text-xl font-semibold"
+                  className="section-label"
                 >
                   {PRIORITY_LABEL[group.priority]}
-                  <span className="font-sans text-sm font-normal text-muted-foreground">{group.items.length}</span>
+                  <span className="font-normal">{group.items.length}</span>
                 </h2>
-                <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+                <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
                   {group.items.map((source) => {
                     const hits = hitsFor(source.id);
                     const days = daysSince(source.lastCheck);

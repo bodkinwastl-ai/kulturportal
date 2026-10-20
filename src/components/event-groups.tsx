@@ -31,17 +31,18 @@ export function EventGroups({ events, grouped, layout = "grid", onOpen, onStatus
   if (!grouped) return <div className={gridClass}>{cards(events)}</div>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {groupByDay(events).map((group) => (
         <section key={group.key} aria-labelledby={`day-${group.key}`}>
           <h2
             id={`day-${group.key}`}
             className={cn(
-              "mb-3 border-b border-border pb-2 text-xl font-semibold",
-              group.label === "Heute" ? "text-accent" : "text-foreground"
+              "sticky top-14 z-10 -mx-4 mb-3 border-b border-border bg-background px-4 py-2 text-sm font-semibold uppercase tracking-wider sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+              group.label === "Heute" ? "text-accent" : "text-muted-foreground"
             )}
           >
             {group.label}
+            <span className="ml-2 font-normal text-muted-foreground">{group.items.length}</span>
           </h2>
           <div className={gridClass}>{cards(group.items)}</div>
         </section>

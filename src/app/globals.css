@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 /*
- * Kulturportal design tokens: "Editorial Swiss".
- * Warm paper, ink text, a single vermilion accent. Status colours are
+ * Kulturportal design tokens: "Flat news".
+ * Neutral paper, ink text, a single vermilion accent. Status colours are
  * semantic and used sparingly (see status-pill.tsx).
  * Contrast (on --background / --card): foreground 16:1, muted-foreground 7:1,
  * accent 5.2:1 on white.
  */
 :root {
-  --background: #faf8f4;
+  --background: #f5f5f3;
   --foreground: #1c1917;
   --card: #ffffff;
   --card-foreground: #1c1917;
@@ -16,18 +16,20 @@
   --popover-foreground: #1c1917;
   --primary: #1c1917;
   --primary-foreground: #fafaf9;
-  --secondary: #f1eee8;
+  --secondary: #ededea;
   --secondary-foreground: #1c1917;
-  --muted: #f1eee8;
+  --muted: #ededea;
   --muted-foreground: #57534e;
   --accent: #c2410c;
   --accent-foreground: #ffffff;
   --destructive: #b91c1c;
   --destructive-foreground: #ffffff;
-  --border: #e7e2d9;
-  --input: #d6d0c4;
+  --border: #e4e4e0;
+  --input: #cfcfc9;
   --ring: #c2410c;
-  --radius: 12px;
+  --radius: 8px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* Tailwind v4 ignores tailwind.config.ts, so tokens are registered here. */
@@ -97,6 +99,22 @@
   }
 }
 
+/* Individual transform properties so they compose with Tailwind's translate-* centering */
+@keyframes overlay-in { from { opacity: 0; } }
+@keyframes overlay-out { to { opacity: 0; } }
+@keyframes modal-in { from { opacity: 0; scale: 0.96; } }
+@keyframes modal-out { to { opacity: 0; scale: 0.97; } }
+@keyframes sheet-in { from { translate: 100% 0; } }
+@keyframes sheet-out { to { translate: 100% 0; } }
+@keyframes popover-in { from { opacity: 0; scale: 0.97; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-motion[data-state], .popover-motion[data-state] { animation-name: overlay-in; }
+  .modal-motion[data-state="closed"], .popover-motion[data-state="closed"] { animation-name: overlay-out; }
+  .sheet-motion[data-state="open"] { animation-name: overlay-in; }
+  .sheet-motion[data-state="closed"] { animation-name: overlay-out; }
+}
+
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -112,15 +130,25 @@
 }
 
 @layer utilities {
+  /* Flat surface: border only, no shadow. Hover is gated to real pointers. */
   .enterprise-card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    transition: border-color 200ms ease, box-shadow 200ms ease;
+    transition: border-color 160ms var(--ease-out), transform 160ms var(--ease-out);
   }
-  .enterprise-card:hover {
-    border-color: var(--input);
-    box-shadow: 0 1px 2px rgb(28 25 23 / 0.06), 0 6px 16px -8px rgb(28 25 23 / 0.12);
+  .enterprise-card:active {
+    transform: scale(0.99);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .enterprise-card:hover {
+      border-color: var(--foreground);
+    }
+  }
+
+  /* Section label shared by city / priority groups */
+  .section-label {
+    @apply mb-3 flex items-baseline gap-2 border-b border-border pb-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted-foreground;
   }
 
   .dense-grid {
@@ -159,3 +187,22 @@
   background: var(--input);
   border-radius: 9999px;
 }
+
+/*
+ * Overlay motion. The project ships no tailwindcss-animate plugin, so the
+ * animate-in/zoom-in utilities do nothing; these keyframes are the real thing.
+ * Keyframes (not transitions) because Radix waits for animationend before unmounting.
+ * Enter is slower than exit: the system responds fast, the user is allowed to watch it arrive.
+ */
+.overlay-motion[data-state="open"] { animation: overlay-in 180ms var(--ease-out); }
+.overlay-motion[data-state="closed"] { animation: overlay-out 140ms var(--ease-out) forwards; }
+
+.modal-motion[data-state="open"] { animation: modal-in 200ms var(--ease-out); }
+.modal-motion[data-state="closed"] { animation: modal-out 140ms var(--ease-out) forwards; }
+
+.sheet-motion[data-state="open"] { animation: sheet-in 280ms var(--ease-drawer); }
+.sheet-motion[data-state="closed"] { animation: sheet-out 200ms var(--ease-drawer) forwards; }
+
+.popover-motion { transform-origin: var(--radix-select-content-transform-origin); }
+.popover-motion[data-state="open"] { animation: popover-in 140ms var(--ease-out); }
+.popover-motion[data-state="closed"] { animation: overlay-out 100ms var(--ease-out) forwards; }
