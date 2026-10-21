@@ -54,7 +54,11 @@ export function ShareEventForm({ event, onInvited }: ShareEventFormProps) {
 
       if (addInvitee) {
         const current = (event.invitees || "").split(",").map((s) => s.trim()).filter(Boolean);
-        if (!current.includes(address)) onInvited([...current, address].join(", "));
+        // Entries carry the send date: "name@x.at (21.10.)"; compare by address only
+        if (!current.some((c) => c.split(" ")[0] === address)) {
+          const day = new Date().toLocaleDateString("de-DE", { day: "numeric", month: "numeric" });
+          onInvited([...current, `${address} (${day})`].join(", "));
+        }
       }
       setState({ kind: "ok", text: `Mail an ${address} gesendet` });
       setTo("");
