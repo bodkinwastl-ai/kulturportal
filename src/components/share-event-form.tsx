@@ -87,7 +87,7 @@ export function ShareEventForm({ event, onInvited }: ShareEventFormProps) {
             <option key={r} value={r} />
           ))}
         </datalist>
-        <Button type="submit" disabled={state.kind === "sending"} className="shrink-0">
+        <Button type="submit" variant="outline" disabled={state.kind === "sending"} className="shrink-0">
           {state.kind === "sending" ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
           ) : (

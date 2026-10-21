@@ -69,11 +69,11 @@ function WeekView() {
 
   return (
     <AppShell notionConnected={notionConnected}>
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-foreground sm:text-4xl">Woche</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <h1 className="page-title">Woche</h1>
+            <p className="page-meta">
               {rangeLabel} · {weekEvents.length} {weekEvents.length === 1 ? "Event" : "Events"}
               {hasFilters && inWeek.length !== weekEvents.length && ` von ${inWeek.length}`}
             </p>

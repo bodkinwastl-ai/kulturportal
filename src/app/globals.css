@@ -146,9 +146,37 @@
     }
   }
 
+  /*
+   * Type scale (one step per job, nothing in between):
+   *   page-title 32/36 display  >  group-title 20 display  >  card title 20 display
+   *   >  body/meta 14  >  eyebrow/label 12 caps
+   * Page titles and group headings are the only two heading levels on a page.
+   */
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--foreground);
+  }
+  @media (min-width: 640px) {
+    .page-title { font-size: 2rem; }
+  }
+  .page-meta {
+    @apply mt-1.5 text-sm text-muted-foreground;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground;
+  }
+  /* Quiet stat tiles: numbers are context, never louder than an event title */
+  .stat-value {
+    @apply text-xl font-semibold leading-tight tabular-nums text-foreground;
+  }
+
   /* Section label shared by city / priority groups */
   .section-label {
-    @apply mb-3 flex items-baseline gap-2 border-b border-border pb-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted-foreground;
+    @apply mb-3 flex items-baseline gap-2 border-b border-border pb-2 font-sans text-xs font-semibold uppercase tracking-wider text-muted-foreground;
   }
 
   .dense-grid {

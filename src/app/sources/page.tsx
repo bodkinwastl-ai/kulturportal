@@ -79,11 +79,11 @@ export default function SourcesPage() {
 
   return (
     <AppShell notionConnected={notionConnected}>
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-3xl font-semibold text-foreground sm:text-4xl">Quellen</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <h1 className="page-title">Quellen</h1>
+            <p className="page-meta">
               {stats[0].value} Quellen · {stats[1].value} aktiv
             </p>
           </div>
@@ -97,7 +97,7 @@ export default function SourcesPage() {
           {stats.map((s) => (
             <div key={s.label} className="px-4 py-3">
               <dt className="text-xs font-medium text-muted-foreground">{s.label}</dt>
-              <dd className="font-display text-2xl font-semibold text-foreground">{s.value}</dd>
+              <dd className="stat-value">{s.value}</dd>
             </div>
           ))}
         </dl>
@@ -142,7 +142,7 @@ export default function SourcesPage() {
             <p className="font-medium text-foreground">
               {sources.length === 0 ? "Noch keine Quellen" : "Keine Quellen gefunden"}
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="page-meta">
               {sources.length === 0 ? "Füge deine erste Quelle hinzu." : "Andere Suche oder anderer Filter?"}
             </p>
           </div>

@@ -107,12 +107,12 @@ export default function Dashboard() {
   
   return (
     <AppShell notionConnected={notionConnected}>
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Header */}
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-3xl font-semibold text-foreground sm:text-4xl">Übersicht</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <h1 className="page-title">Übersicht</h1>
+            <p className="page-meta">
               {sortedEvents.length} von {stats.total} Events
               {activeFiltersCount === 0 ? " · Neu und Interessant" : ` · ${activeFiltersCount} Filter aktiv`}
               {" · "}
@@ -146,8 +146,8 @@ export default function Dashboard() {
             { label: "Gesamt", value: stats.total },
           ].map((item) => (
             <div key={item.label} className="px-4 py-3">
-              <dt className="text-xs font-medium text-muted-foreground">{item.label}</dt>
-              <dd className={`font-display text-2xl font-semibold ${item.strong && item.value > 0 ? "text-accent" : "text-foreground"}`}>
+              <dt className={`text-xs ${item.strong ? "font-semibold text-foreground" : "font-medium text-muted-foreground"}`}>{item.label}</dt>
+              <dd className={`stat-value ${item.strong && item.value > 0 ? "!text-accent" : item.strong ? "" : "!text-muted-foreground"}`}>
                 {item.value}
               </dd>
             </div>

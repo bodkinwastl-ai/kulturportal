@@ -77,8 +77,8 @@ function VenuesView() {
             <>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div className="min-w-0">
-                  <h1 className="text-3xl font-semibold text-foreground sm:text-4xl">{group.name}</h1>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <h1 className="page-title">{group.name}</h1>
+                  <p className="page-meta">
                     {[group.city, `${upcoming.length} kommende${upcoming.length === 1 ? "s Event" : " Events"}`]
                       .filter(Boolean)
                       .join(" · ")}
@@ -134,8 +134,8 @@ function VenuesView() {
     <AppShell notionConnected={notionConnected}>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-semibold text-foreground sm:text-4xl">Orte</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="page-title">Orte</h1>
+          <p className="page-meta">
             {withUpcoming.length} {withUpcoming.length === 1 ? "Ort" : "Orte"} mit kommenden Events
           </p>
         </div>

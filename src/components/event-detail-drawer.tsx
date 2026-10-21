@@ -52,7 +52,7 @@ function InlineField({
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <span className="flex items-center gap-1.5 eyebrow">
           {icon}
           {label}
         </span>
@@ -128,7 +128,7 @@ export function EventDetailDrawer({
         <DialogHeader className="space-y-3 border-b border-border p-5 pr-12 sm:p-6 sm:pr-14">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             {event.categories[0] && (
-              <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="flex items-center gap-1.5 eyebrow">
                 <span className={cn("h-2 w-2 rounded-sm", categoryColor(event.categories[0]).bar)} aria-hidden="true" />
                 {event.categories[0]}
               </span>
@@ -136,7 +136,7 @@ export function EventDetailDrawer({
             <StatusPill status={event.status} size="sm" />
             {isPast && <span className="text-xs font-medium text-amber-700">Vergangen</span>}
           </div>
-          <DialogTitle className="font-display text-2xl font-semibold leading-snug text-balance text-foreground sm:text-3xl">
+          <DialogTitle className="font-display text-2xl font-semibold leading-tight text-balance text-foreground">
             {event.title}
           </DialogTitle>
           <DialogDescription asChild>
@@ -190,7 +190,7 @@ export function EventDetailDrawer({
           <div className="min-w-0 space-y-5 md:order-1">
             {/* Status */}
             <div>
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</div>
+              <div className="mb-2 eyebrow">Status</div>
               <div role="group" aria-label="Status ändern" className="flex flex-wrap gap-2">
                 {STATUS_CHOICES.map(({ status, label }) => (
                   <Button
@@ -223,7 +223,7 @@ export function EventDetailDrawer({
             </div>
 
             <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Bewertung</span>
+              <span className="eyebrow">Bewertung</span>
               <div className="flex gap-0.5" role="group" aria-label="Bewertung">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -261,7 +261,7 @@ export function EventDetailDrawer({
               onSave={onInviteesChange}
             />
 
-            {event.sourceName && <p className="text-xs text-muted-foreground">Quelle: {event.sourceName}</p>}
+            {event.sourceName && <p className="border-t border-border pt-4 text-xs text-muted-foreground">Quelle: {event.sourceName}</p>}
           </div>
         </div>
       </DialogContent>
