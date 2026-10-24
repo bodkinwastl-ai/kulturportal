@@ -29,6 +29,10 @@ export type CultureEvent = {
   rating?: number;
   personalNote?: string;
   lastReviewedAt?: string;
+  /** Derived client-side by dedupeEvents, never stored */
+  alsoAt?: string[];
+  mergedCount?: number;
+  possibleDuplicateOf?: { id: string; title: string; sourceName?: string };
 };
 
 export type CultureSource = {

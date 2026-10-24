@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CultureEvent, CultureEventStatus } from "@/lib/types";
+import { dedupeEvents } from "@/lib/dedupe";
 
 export type Notice = {
   id: number;
@@ -12,15 +13,16 @@ export type Notice = {
 
 /** Loads events and owns every write: optimistic update, rollback on error, undo. */
 export function useEvents() {
-  const [events, setEvents] = useState<CultureEvent[]>([]);
+  const [rawEvents, setEvents] = useState<CultureEvent[]>([]);
+  const events = useMemo(() => dedupeEvents(rawEvents), [rawEvents]);
   const [loading, setLoading] = useState(true);
   const [notionConnected, setNotionConnected] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const noticeId = useRef(0);
-  const eventsRef = useRef(events);
+  const eventsRef = useRef(rawEvents);
   useEffect(() => {
-    eventsRef.current = events;
-  }, [events]);
+    eventsRef.current = rawEvents;
+  }, [rawEvents]);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,6 +114,20 @@ export function useEvents() {
     });
   };
 
+  /** Hides the duplicate and carries over what the user entered on it (rating, note, invitees) if the target has none. */
+  const handleMerge = (duplicateId: string, targetId: string) => {
+    const dup = eventsRef.current.find((e) => e.id === duplicateId);
+    const target = eventsRef.current.find((e) => e.id === targetId);
+    if (dup && target) {
+      const carry: Partial<CultureEvent> = {};
+      if (dup.rating && !target.rating) carry.rating = dup.rating;
+      if (dup.personalNote && !target.personalNote) carry.personalNote = dup.personalNote;
+      if (dup.invitees && !target.invitees) carry.invitees = dup.invitees;
+      if (Object.keys(carry).length) update(targetId, carry);
+    }
+    update(duplicateId, { status: "Ignorieren" }, "Duplikat zusammengeführt");
+  };
+
   return {
     events,
     loading,
@@ -121,6 +137,7 @@ export function useEvents() {
     handleStatusChange,
     handleCalendarToggle,
     handleInviteesChange,
+    handleMerge,
     handleRatingChange: (eventId: string, rating: number) => update(eventId, { rating }),
     handlePersonalNoteChange: (eventId: string, personalNote: string) => update(eventId, { personalNote }),
   };

@@ -9,7 +9,8 @@ import { StatusPill } from "./status-pill";
 import { ShareEventForm } from "./share-event-form";
 import { categoryColor } from "@/lib/category-colors";
 import { cn } from "@/lib/utils";
-import { Calendar, CalendarCheck, Check, Clock, Edit3, ExternalLink, MapPin, Star, Users, X } from "lucide-react";
+import { trailerUrl, wantsTrailer } from "@/lib/trailer";
+import { Calendar, CalendarCheck, Check, Clock, Edit3, ExternalLink, Play, MapPin, Star, Users, X } from "lucide-react";
 
 interface EventDetailDrawerProps {
   event: CultureEvent | null;
@@ -176,6 +177,14 @@ export function EventDetailDrawer({
                 )}
                 {event.calendarCreated ? "Im Kalender erstellt" : event.calendarWanted ? "Für Kalender vorgemerkt" : "In Kalender übernehmen"}
               </Button>
+              {wantsTrailer(event) && (
+                <Button asChild variant="outline">
+                  <a href={trailerUrl(event)} target="_blank" rel="noopener noreferrer">
+                    <Play className="mr-2 h-4 w-4" aria-hidden="true" />
+                    Trailer suchen
+                  </a>
+                </Button>
+              )}
               {event.url && (
                 <Button asChild variant="outline">
                   <a href={event.url} target="_blank" rel="noopener noreferrer">

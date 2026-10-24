@@ -25,7 +25,7 @@ interface DashboardStats {
 export default function Dashboard() {
   const {
     events: allEvents, loading, notionConnected, notice, dismissNotice,
-    handleStatusChange, handleCalendarToggle, handleInviteesChange,
+    handleStatusChange, handleCalendarToggle, handleInviteesChange, handleMerge,
     handleRatingChange, handlePersonalNoteChange,
   } = useEvents();
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -179,6 +179,7 @@ export default function Dashboard() {
             onOpen={(event) => setSelectedEventId(event.id)}
             onStatusChange={handleStatusChange}
             onCalendarToggle={handleCalendarToggle}
+            onMerge={handleMerge}
           />
         ) : (
           <Card className="enterprise-card">

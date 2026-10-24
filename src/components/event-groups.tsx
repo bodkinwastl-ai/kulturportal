@@ -13,9 +13,11 @@ interface EventGroupsProps {
   onOpen: (event: CultureEvent) => void;
   onStatusChange: (id: string, status: CultureEventStatus) => void;
   onCalendarToggle: (id: string) => void;
+  /** Merge a flagged duplicate into the event it duplicates */
+  onMerge?: (duplicateId: string, targetId: string) => void;
 }
 
-export function EventGroups({ events, grouped, layout = "grid", onOpen, onStatusChange, onCalendarToggle }: EventGroupsProps) {
+export function EventGroups({ events, grouped, layout = "grid", onOpen, onStatusChange, onCalendarToggle, onMerge }: EventGroupsProps) {
   const gridClass = layout === "grid" ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3" : "space-y-4";
   const cards = (list: CultureEvent[]) =>
     list.map((event) => (
@@ -25,6 +27,7 @@ export function EventGroups({ events, grouped, layout = "grid", onOpen, onStatus
         onClick={() => onOpen(event)}
         onStatusChange={(status) => onStatusChange(event.id, status)}
         onCalendarToggle={() => onCalendarToggle(event.id)}
+        onMerge={onMerge && event.possibleDuplicateOf ? () => onMerge(event.id, event.possibleDuplicateOf!.id) : undefined}
       />
     ));
 

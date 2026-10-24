@@ -3,7 +3,8 @@
 import { CultureEvent, CultureEventStatus } from "@/lib/types";
 import { StatusPill } from "./status-pill";
 import { Button } from "./ui/button";
-import { Calendar, CalendarCheck, Check, Users, Star, ExternalLink, Clock, MapPin, X } from "lucide-react";
+import { Calendar, CalendarCheck, Check, Users, Star, ExternalLink, Clock, MapPin, EyeOff, Play, Merge } from "lucide-react";
+import { trailerUrl, wantsTrailer } from "@/lib/trailer";
 import { cn } from "@/lib/utils";
 import { categoryColor } from "@/lib/category-colors";
 
@@ -12,9 +13,11 @@ interface EventCardProps {
   onClick: () => void;
   onStatusChange: (status: CultureEventStatus) => void;
   onCalendarToggle: () => void;
+  /** Set when this card is a flagged possible duplicate */
+  onMerge?: () => void;
 }
 
-export function EventCard({ event, onClick, onStatusChange, onCalendarToggle }: EventCardProps) {
+export function EventCard({ event, onClick, onStatusChange, onCalendarToggle, onMerge }: EventCardProps) {
   const eventDate = new Date(event.date);
   const now = new Date();
   const isToday = eventDate.toDateString() === now.toDateString();
@@ -117,6 +120,30 @@ export function EventCard({ event, onClick, onStatusChange, onCalendarToggle }: 
         </div>
       )}
 
+      {event.alsoAt && (
+        <p className="mt-3 text-xs text-muted-foreground">Auch bei: {event.alsoAt.join(", ")}</p>
+      )}
+      {event.possibleDuplicateOf && (
+        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <p>
+            Mögliches Duplikat von <span className="font-medium">{event.possibleDuplicateOf.title}</span>
+            {event.possibleDuplicateOf.sourceName ? ` (${event.possibleDuplicateOf.sourceName})` : ""}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {onMerge && (
+              <Button size="sm" variant="outline" onClick={stop(onMerge)}>
+                <Merge className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                Zusammenführen
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={stop(() => onStatusChange("Ignorieren"))}>
+              <EyeOff className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              Ausblenden
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Actions: one primary per card. Neu: Interessant (solid) > Kalender (outline) > Ignorieren (icon) */}
       <div className="mt-auto pt-5">
         {(showTriage || showCalendar) && (
@@ -145,14 +172,13 @@ export function EventCard({ event, onClick, onStatusChange, onCalendarToggle }: 
             )}
             {showTriage && (
               <Button
-                size="icon"
-                variant="ghost"
-                title="Ignorieren"
-                aria-label="Ignorieren"
+                size="sm"
+                variant="outline"
                 onClick={stop(() => onStatusChange("Ignorieren"))}
-                className="ml-auto h-9 w-9 text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground"
               >
-                <X className="h-4 w-4" aria-hidden="true" />
+                <EyeOff className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                Ignorieren
               </Button>
             )}
           </div>
@@ -163,7 +189,19 @@ export function EventCard({ event, onClick, onStatusChange, onCalendarToggle }: 
             {event.url ? <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : null}
             <span className="truncate">{event.sourceName}</span>
           </span>
-          <span className="flex shrink-0 items-center gap-2">
+          <span className="flex shrink-0 items-center gap-3">
+            {wantsTrailer(event) && (
+              <a
+                href={trailerUrl(event)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 font-medium text-foreground hover:text-accent"
+              >
+                <Play className="h-3.5 w-3.5" aria-hidden="true" />
+                Trailer
+              </a>
+            )}
             {event.calendarWanted && !showCalendar && <CalendarCheck className="h-3.5 w-3.5 text-teal-700" aria-label="Für Kalender markiert" />}
             {event.invitees && <Users className="h-3.5 w-3.5 text-violet-700" aria-label="Einladungen" />}
           </span>

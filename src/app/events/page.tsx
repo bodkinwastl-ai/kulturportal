@@ -17,7 +17,7 @@ type SortOption = "date" | "status" | "rating";
 export default function EventsPage() {
   const {
     events, loading, notionConnected, notice, dismissNotice,
-    handleStatusChange, handleCalendarToggle, handleInviteesChange,
+    handleStatusChange, handleCalendarToggle, handleInviteesChange, handleMerge,
     handleRatingChange, handlePersonalNoteChange,
   } = useEvents();
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -179,6 +179,7 @@ export default function EventsPage() {
             onOpen={(event) => setSelectedEventId(event.id)}
             onStatusChange={handleStatusChange}
             onCalendarToggle={handleCalendarToggle}
+            onMerge={handleMerge}
           />
         ) : (
           <div className="py-12 text-center">

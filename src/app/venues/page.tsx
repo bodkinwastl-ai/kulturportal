@@ -19,7 +19,7 @@ function VenuesView() {
   const selectedKey = params.get("ort");
   const {
     events, loading, notionConnected, notice, dismissNotice,
-    handleStatusChange, handleCalendarToggle, handleInviteesChange,
+    handleStatusChange, handleCalendarToggle, handleInviteesChange, handleMerge,
     handleRatingChange, handlePersonalNoteChange,
   } = useEvents();
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -104,6 +104,7 @@ function VenuesView() {
                   onOpen={(event) => setSelectedEventId(event.id)}
                   onStatusChange={handleStatusChange}
                   onCalendarToggle={handleCalendarToggle}
+                  onMerge={handleMerge}
                 />
               ) : (
                 <p className="text-muted-foreground">Keine kommenden Events an diesem Ort.</p>
