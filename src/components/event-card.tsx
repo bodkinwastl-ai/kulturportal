@@ -8,6 +8,9 @@ import { trailerUrl, wantsTrailer } from "@/lib/trailer";
 import { cn } from "@/lib/utils";
 import { categoryColor } from "@/lib/category-colors";
 
+// Compact, same-height triage buttons so Interessant, Kalender and Ignorieren fit on one line
+const ACTION = "h-8 gap-0 px-2.5 text-xs";
+
 interface EventCardProps {
   event: CultureEvent;
   onClick: () => void;
@@ -147,10 +150,10 @@ export function EventCard({ event, onClick, onStatusChange, onCalendarToggle, on
       {/* Actions: one primary per card. Neu: Interessant (solid) > Kalender (outline) > Ignorieren (icon) */}
       <div className="mt-auto pt-5">
         {(showTriage || showCalendar) && (
-          <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+          <div className="flex items-center gap-1.5 border-t border-border pt-4">
             {showTriage && (
-              <Button size="sm" onClick={stop(() => onStatusChange("Interessant"))}>
-                <Check className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              <Button size="sm" onClick={stop(() => onStatusChange("Interessant"))} className={cn(ACTION, "bg-emerald-700 text-white hover:bg-emerald-800")}>
+                <Check className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
                 Interessant
               </Button>
             )}
@@ -160,12 +163,17 @@ export function EventCard({ event, onClick, onStatusChange, onCalendarToggle, on
                 variant="outline"
                 aria-pressed={!!event.calendarWanted}
                 onClick={stop(onCalendarToggle)}
-                className={cn(event.calendarWanted && "border-teal-300 text-teal-800 hover:bg-teal-50")}
+                className={cn(
+                  ACTION,
+                  event.calendarWanted
+                    ? "border-teal-300 bg-teal-100 text-teal-900 hover:bg-teal-200"
+                    : "border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100"
+                )}
               >
                 {event.calendarWanted ? (
-                  <CalendarCheck className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                  <CalendarCheck className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
                 ) : (
-                  <Calendar className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                  <Calendar className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
                 )}
                 Kalender
               </Button>
@@ -175,9 +183,9 @@ export function EventCard({ event, onClick, onStatusChange, onCalendarToggle, on
                 size="sm"
                 variant="outline"
                 onClick={stop(() => onStatusChange("Ignorieren"))}
-                className="text-muted-foreground hover:text-foreground"
+                className={cn(ACTION, "border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100")}
               >
-                <EyeOff className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                <EyeOff className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
                 Ignorieren
               </Button>
             )}
